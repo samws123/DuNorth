@@ -34,7 +34,7 @@ function score(item, query) {
 }
 
 function search(query) {
-  if (!query) return catalog.slice(0, 20);
+  if (!query || !query.trim()) return [];
   return catalog
     .map(it => ({ it, s: score(it, query) }))
     .filter(x => x.s > 0)
@@ -52,7 +52,6 @@ function render(list) {
     div.innerHTML = `<div>${escapeHtml(item.name)}</div>`;
     div.addEventListener('click', () => {
       selected = item;
-      pickedEl.textContent = `I attend ${item.name}.`;
       qEl.value = item.name;
       resEl.innerHTML = '';
       contBtn.disabled = false;
@@ -75,7 +74,8 @@ contBtn.addEventListener('click', async () => {
     baseUrl: selected.baseUrl,
     updatedAt: Date.now()
   }));
-  alert(`Saved ${selected.name}. Base URL: ${selected.baseUrl}`);
+  // Go to chat without any popups
+  window.location.href = '../chat/chat.html';
 });
 
 function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
