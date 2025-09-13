@@ -8,10 +8,14 @@ sendBtn.addEventListener('click', onSend);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } });
 
 refreshBtn.addEventListener('click', async () => {
-  // Placeholder: this will trigger extension sync later.
-  banner('Refreshing Canvas (demo)…');
-  await sleep(600);
-  banner('Canvas sync complete.');
+  const userId = localStorage.getItem('dunorth_user') || 'demo-user';
+  try {
+    const r = await fetch('/api/sync/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
+    if (!r.ok) throw new Error('sync failed');
+    banner('Sync requested. Fetching latest from Canvas…');
+  } catch (e) {
+    banner('Could not request sync.');
+  }
 });
 
 // No extension prompts in chat
@@ -22,11 +26,21 @@ function onSend() {
   addMsg('user', text);
   input.value = '';
   // Demo assistant reply; replace with backend LLM call.
-  setTimeout(async () => {
-    const school = JSON.parse(localStorage.getItem('dunorth_school') || '{}');
-    const reply = planAnswer(text, school);
-    addMsg('assistant', reply);
-  }, 200);
+  (async () => {
+    try {
+      const userId = localStorage.getItem('dunorth_user') || 'demo-user';
+      const r = await fetch('/api/chat/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, message: text }) });
+      const data = await r.json();
+      if (data?.type === 'list') {
+        const lines = (data.items || []).map(it => `• ${it.name} — ${new Date(it.due_at).toLocaleString()}`);
+        addMsg('assistant', lines.length ? lines.join('\n') : 'No items found in that window.');
+      } else {
+        addMsg('assistant', data.text || '');
+      }
+    } catch (e) {
+      addMsg('assistant', 'Server error.');
+    }
+  })();
 }
 
 function addMsg(role, text) {
@@ -42,19 +56,7 @@ function banner(text) {
   addMsg('assistant', text);
 }
 
-function planAnswer(q, school) {
-  const lower = q.toLowerCase();
-  if (lower.includes('what') && lower.includes('due') && (lower.includes('week') || lower.includes('today'))) {
-    return 'I will check your Canvas assignments for the requested window and list due dates. (Demo)';
-  }
-  if (lower.includes('refresh')) {
-    return `I will sync from ${school.baseUrl || 'your Canvas'} and update my index. (Demo)`;
-  }
-  if (lower.includes('paper')) {
-    return 'I can help outline and draft—share the prompt and sources. (Demo)';
-  }
-  return 'Got it. Let me look through your synced pages and files. (Demo)';
-}
+// local rule fallback removed; handled by backend
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 

@@ -1,0 +1,15 @@
+{
+  "name": "dunorth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vercel-build": "echo 'static site'"
+  },
+  "dependencies": {
+    "mongodb": "^6.6.0",
+    "openai": "^4.56.0"
+  }
+}
+
+
