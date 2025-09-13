@@ -49,10 +49,12 @@ function render(list) {
     const div = document.createElement('div');
     div.className = 'item';
     div.setAttribute('role', 'option');
-    div.innerHTML = `<div>${escapeHtml(item.name)}</div><span class="pill">${item.baseUrl.replace(/^https?:\/\//,'')}</span>`;
+    div.innerHTML = `<div>${escapeHtml(item.name)}</div>`;
     div.addEventListener('click', () => {
       selected = item;
-      pickedEl.textContent = `${item.name} — ${item.baseUrl}`;
+      pickedEl.textContent = `I attend ${item.name}.`;
+      qEl.value = item.name;
+      resEl.innerHTML = '';
       contBtn.disabled = false;
     });
     resEl.appendChild(div);
