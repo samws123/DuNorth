@@ -76,7 +76,7 @@
       function startTrial(){
         const trialEndsAt = Date.now() + 7*24*60*60*1000;
         localStorage.setItem('dunorth_trial', JSON.stringify({ startedAt: Date.now(), endsAt: trialEndsAt }));
-        window.location.href = '../chat/chat.html';
+        window.location.href = './install.html';
       }
       document.getElementById('start').addEventListener('click', startTrial);
       document.getElementById('start2').addEventListener('click', startTrial);

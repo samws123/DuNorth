@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Install Extension</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .wrap2 { max-width: 760px; margin: 60px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+      .muted { color: var(--muted); }
+      .row { display:flex; gap:12px; }
+      .big { font-size: 18px; }
+      .center { text-align:center; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="brand">DuNorth</header>
+      <main class="wrap2">
+        <h1 class="center">Add the DuNorth Chrome Extension</h1>
+        <p class="muted center">This lets us read your Canvas data with your existing login. You can remove it anytime.</p>
+        <div class="row" style="justify-content:center; margin: 20px 0 10px;">
+          <a id="goInstall" class="btn primary" href="https://chrome.google.com/webstore" target="_blank" rel="noopener">Go install extension</a>
+          <button id="installed" class="btn">I installed it</button>
+        </div>
+        <p class="muted center" style="margin-top:6px;">Opens the Chrome Web Store in a new tab. Come back here when done.</p>
+      </main>
+    </div>
+    <script>
+      // Optional: auto-continue if extension responds to a handshake
+      function detectExtension(timeout = 400){
+        return new Promise((resolve) => {
+          let done = false;
+          function onMsg(ev){ if (ev?.data?.dunorth_ext === 'pong'){ done = true; cleanup(); resolve(true); } }
+          function cleanup(){ window.removeEventListener('message', onMsg); }
+          window.addEventListener('message', onMsg);
+          window.postMessage({ dunorth_page: 'ping' }, '*');
+          setTimeout(() => { if (!done){ cleanup(); resolve(false); } }, timeout);
+        });
+      }
+
+      document.getElementById('installed').addEventListener('click', () => {
+        window.location.href = '../chat/chat.html?connected=1';
+      });
+
+      // If the user installs and returns, we can try to auto-advance
+      (async () => {
+        const ok = await detectExtension(700);
+        if (ok) window.location.href = '../chat/chat.html?connected=1';
+      })();
+    </script>
+  </body>
+  </html>
+
+

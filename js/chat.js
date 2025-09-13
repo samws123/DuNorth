@@ -2,13 +2,7 @@ const messages = document.getElementById('messages');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const refreshBtn = document.getElementById('refresh');
-const bannerEl = document.getElementById('connect');
 const emptyEl = document.getElementById('empty');
-const installBtn = document.getElementById('install');
-const installedBtn = document.getElementById('installed');
-const modal = document.getElementById('installModal');
-const openListing = document.getElementById('openListing');
-const closeModal = document.getElementById('closeModal');
 
 sendBtn.addEventListener('click', onSend);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } });
@@ -20,23 +14,7 @@ refreshBtn.addEventListener('click', async () => {
   banner('Canvas sync complete.');
 });
 
-// On load: detect extension handshake and show banner if missing
-window.addEventListener('DOMContentLoaded', async () => {
-  const hasExt = await detectExtension();
-  bannerEl.style.display = hasExt ? 'none' : 'flex';
-});
-
-installBtn?.addEventListener('click', () => {
-  showModal(true);
-});
-
-installedBtn?.addEventListener('click', async () => {
-  const hasExt = await detectExtension(800);
-  bannerEl.style.display = hasExt ? 'none' : 'flex';
-});
-
-openListing?.setAttribute('href', 'https://chrome.google.com/webstore');
-closeModal?.addEventListener('click', () => showModal(false));
+// No extension prompts in chat
 
 function onSend() {
   const text = (input.value || '').trim();
@@ -80,20 +58,6 @@ function planAnswer(q, school) {
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-function showModal(show){ if (!modal) return; modal.style.display = show ? 'flex' : 'none'; }
-
-// Simple extension detection via postMessage handshake
-function detectExtension(timeout = 400) {
-  return new Promise((resolve) => {
-    let done = false;
-    function onMsg(ev){
-      if (ev && ev.data && ev.data.dunorth_ext === 'pong') { done = true; cleanup(); resolve(true); }
-    }
-    function cleanup(){ window.removeEventListener('message', onMsg); }
-    window.addEventListener('message', onMsg);
-    window.postMessage({ dunorth_page: 'ping' }, '*');
-    setTimeout(() => { if (!done) { cleanup(); resolve(false); } }, timeout);
-  });
-}
+// (extension detection removed from chat)
 
 
