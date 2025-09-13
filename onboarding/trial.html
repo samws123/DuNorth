@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Free trial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .center { max-width: 640px; margin: 60px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+      .muted { color: var(--muted); font-size: 14px; }
+      .cta { display:flex; gap:12px; align-items:center; }
+      .check { width:18px; height:18px; border-radius:4px; background:#10b981; display:inline-block; }
+      ul { padding-left: 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="brand">DuNorth</header>
+      <main class="center">
+        <h1>Start your 7‑day free trial</h1>
+        <p class="muted">No credit card required. You can cancel anytime.</p>
+        <ul>
+          <li>Connect Canvas and sync your courses</li>
+          <li>Ask due dates, summaries, and quiz explanations</li>
+          <li>Try one long‑form draft credit</li>
+        </ul>
+        <div class="actions">
+          <button id="start" class="btn primary">Start free trial</button>
+          <a href="../schools/school.html" class="btn">Back</a>
+        </div>
+      </main>
+    </div>
+    <script>
+      document.getElementById('start').addEventListener('click', () => {
+        const school = JSON.parse(localStorage.getItem('dunorth_school')||'{}');
+        const trialEndsAt = Date.now() + 7*24*60*60*1000;
+        localStorage.setItem('dunorth_trial', JSON.stringify({ startedAt: Date.now(), endsAt: trialEndsAt }));
+        // proceed to chat where extension detection happens
+        window.location.href = '../chat/chat.html';
+      });
+    </script>
+  </body>
+  </html>
+
+

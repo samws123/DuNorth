@@ -74,8 +74,8 @@ contBtn.addEventListener('click', async () => {
     baseUrl: selected.baseUrl,
     updatedAt: Date.now()
   }));
-  // Go to chat without any popups
-  window.location.href = '../chat/chat.html';
+  // Go to trial screen; chat will handle extension connection
+  window.location.href = '../onboarding/trial.html';
 });
 
 function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }

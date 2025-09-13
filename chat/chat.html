@@ -11,19 +11,26 @@
     <style>
       body { background: #ffffff; }
       .topbar { position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
-      .topbar .brand { margin: 0; }
+      .topbar .brand { margin: 0; font-weight: 600; }
       .toolbar { display: flex; align-items: center; gap: 10px; }
       .iconbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background:#fff; cursor:pointer; }
       .iconbtn svg { width: 16px; height: 16px; }
-      .chat { max-width: 900px; margin: 0 auto; padding: 16px; min-height: calc(100vh - 130px); }
-      .messages { display: flex; flex-direction: column; gap: 14px; margin-bottom: 90px; }
-      .msg { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-      .user { background: #f8fafc; }
-      .assistant { background: #fff; }
+      .chat { max-width: 900px; margin: 0 auto; padding: 16px; min-height: calc(100vh - 180px); }
+      .banner { margin: 12px auto 0; max-width: 900px; border: 1px dashed var(--border); background: #fafafa; padding: 10px 12px; border-radius: 10px; display: none; align-items: center; justify-content: space-between; gap: 12px; }
+      .banner .actions { display:flex; gap:8px; }
+      .messages { display: flex; flex-direction: column; gap: 14px; margin-bottom: 110px; }
+      .msg { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; line-height: 1.5; }
+      .user { background: #f8fafc; align-self: flex-end; max-width: 78%; }
+      .assistant { background: #fff; align-self: flex-start; max-width: 78%; }
+      .empty { text-align: center; color: var(--muted); margin-top: 16vh; font-size: 22px; }
       .composer { position: fixed; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0), #fff 12px); padding: 12px 16px; border-top: 1px solid var(--border); }
       .composer .row { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; }
-      textarea { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); resize: none; height: 52px; }
-      .send { padding: 0 16px; border-radius: 10px; background: var(--primary); color: #fff; border: none; cursor: pointer; }
+      textarea { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border); resize: none; height: 52px; }
+      .send { padding: 0 16px; border-radius: 12px; background: var(--primary); color: #fff; border: none; cursor: pointer; }
+      /* Modal */
+      .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.3); display: none; align-items: center; justify-content: center; }
+      .modal .sheet { width: 520px; background:#fff; border-radius: 12px; border:1px solid var(--border); padding: 20px; }
+      .modal .row { display:flex; gap:10px; justify-content:flex-end; margin-top: 16px; }
     </style>
   </head>
   <body>
@@ -42,9 +49,17 @@
       </div>
     </div>
 
+    <div id="connect" class="banner">
+      <div>Connect Canvas to sync your courses and files.</div>
+      <div class="actions">
+        <button id="install" class="iconbtn">Install extension</button>
+        <button id="installed" class="btn">I installed it</button>
+      </div>
+    </div>
+
     <main class="chat">
       <div id="messages" class="messages">
-        <div class="msg assistant">Hi! I’m your study assistant. Ask me about your assignments, pages, or files.</div>
+        <div class="empty" id="empty">How can I help?</div>
       </div>
     </main>
 
@@ -52,6 +67,21 @@
       <div class="row">
         <textarea id="input" placeholder="Message DuNorth…"></textarea>
         <button id="send" class="send">Send</button>
+      </div>
+    </div>
+
+    <div id="installModal" class="modal">
+      <div class="sheet">
+        <h3>Install the DuNorth extension</h3>
+        <ol>
+          <li>Open the Chrome Web Store listing (or use “Load unpacked” during testing).</li>
+          <li>Click Add to Chrome.</li>
+          <li>Return here and click “I installed it”.</li>
+        </ol>
+        <div class="row">
+          <a class="btn" id="openListing" target="_blank" rel="noopener">Open listing</a>
+          <button class="btn primary" id="closeModal">Close</button>
+        </div>
       </div>
     </div>
 
