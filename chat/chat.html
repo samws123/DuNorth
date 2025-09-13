@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body { background: #ffffff; }
+      .topbar { position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+      .topbar .brand { margin: 0; }
+      .toolbar { display: flex; align-items: center; gap: 10px; }
+      .iconbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background:#fff; cursor:pointer; }
+      .iconbtn svg { width: 16px; height: 16px; }
+      .chat { max-width: 900px; margin: 0 auto; padding: 16px; min-height: calc(100vh - 130px); }
+      .messages { display: flex; flex-direction: column; gap: 14px; margin-bottom: 90px; }
+      .msg { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+      .user { background: #f8fafc; }
+      .assistant { background: #fff; }
+      .composer { position: fixed; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0), #fff 12px); padding: 12px 16px; border-top: 1px solid var(--border); }
+      .composer .row { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; }
+      textarea { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); resize: none; height: 52px; }
+      .send { padding: 0 16px; border-radius: 10px; background: var(--primary); color: #fff; border: none; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="brand">DuNorth</div>
+      <div class="toolbar">
+        <button id="refresh" class="iconbtn" title="Refresh Canvas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+            <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+          </svg>
+          Refresh Canvas
+        </button>
+      </div>
+    </div>
+
+    <main class="chat">
+      <div id="messages" class="messages">
+        <div class="msg assistant">Hi! I’m your study assistant. Ask me about your assignments, pages, or files.</div>
+      </div>
+    </main>
+
+    <div class="composer">
+      <div class="row">
+        <textarea id="input" placeholder="Message DuNorth…"></textarea>
+        <button id="send" class="send">Send</button>
+      </div>
+    </div>
+
+    <script src="../js/chat.js"></script>
+  </body>
+  </html>
+
+

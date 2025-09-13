@@ -12,8 +12,8 @@ linkSignin.addEventListener('click', (e) => {
   alert('Sign in page coming soon.');
 });
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function handleSubmit(e) {
+  if (e) e.preventDefault();
   clearErrors();
   const name = value('name');
   const email = value('email');
@@ -27,15 +27,18 @@ form.addEventListener('submit', async (e) => {
     submitBtn.disabled = true; submitBtn.textContent = 'Creating account…';
     // Demo only: we just log to console. Replace with POST to your backend.
     console.log('Signup payload', { name, email });
-    await new Promise(r => setTimeout(r, 600));
-    alert('Account created. Welcome to DuNorth!');
-    form.reset();
+    await new Promise(r => setTimeout(r, 400));
+    // Redirect to school search after signup
+    window.location.href = 'schools/school.html';
   } catch (err) {
     alert('Something went wrong. Please try again.');
   } finally {
     submitBtn.disabled = false; submitBtn.textContent = 'Start for free';
   }
-});
+}
+
+submitBtn.addEventListener('click', handleSubmit);
+form.addEventListener('submit', handleSubmit);
 
 function value(id) { return document.getElementById(id).value.trim(); }
 function setError(id, msg) { const el = document.querySelector(`.error[data-for="${id}"]`); if (el) el.textContent = msg; }
