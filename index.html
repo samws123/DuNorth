@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Sign up</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="brand">DuNorth</header>
+
+      <main class="card">
+        <h1>Get started with DuNorth</h1>
+
+        <button class="btn sso" id="btn-google" type="button">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" />
+          Continue with Google
+        </button>
+
+        <div class="divider"><span>or</span></div>
+
+        <form id="signup-form" novalidate>
+          <label class="field">
+            <div class="label">Your Name</div>
+            <input id="name" name="name" type="text" placeholder="e.g. Tim Cook" autocomplete="name" required />
+            <div class="error" data-for="name"></div>
+          </label>
+
+          <label class="field">
+            <div class="label">Email</div>
+            <input id="email" name="email" type="email" placeholder="Enter your email address" autocomplete="email" required />
+            <div class="error" data-for="email"></div>
+          </label>
+
+          <label class="field">
+            <div class="label">Password</div>
+            <input id="password" name="password" type="password" placeholder="Please enter your password" autocomplete="new-password" minlength="8" required />
+            <div class="error" data-for="password"></div>
+          </label>
+
+          <button class="btn primary" id="submit" type="submit">Start for free</button>
+        </form>
+
+        <div class="alt">Or <a href="#" id="link-signin">sign in</a> instead</div>
+
+        <p class="tos">By proceeding you acknowledge that you have read, understood and agree to our <a href="#">Terms of Service</a>.</p>
+      </main>
+    </div>
+
+    <script src="js/main.js"></script>
+  </body>
+  </html>
+
+
