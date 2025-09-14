@@ -6,7 +6,11 @@ export function getPool() {
     throw new Error('DATABASE_URL is required');
   }
   if (!pool) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5, ssl: { rejectUnauthorized: false } });
+    pool = new Pool({ 
+      connectionString: process.env.DATABASE_URL, 
+      max: 5, 
+      ssl: process.env.DATABASE_URL?.includes('supabase') ? { rejectUnauthorized: false } : false
+    });
   }
   return pool;
 }
