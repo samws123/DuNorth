@@ -26,20 +26,33 @@ refreshBtn.addEventListener('click', async () => {
     // Send message to extension (need to get actual extension ID after loading)
     const EXTENSION_ID = 'elipinieeokobcniibdafjkbifbfencb'; // Clean extension ID
     const response = await new Promise((resolve, reject) => {
+      console.log('[DuNorth] Attempting to contact extension:', EXTENSION_ID);
+      
       try {
         chrome.runtime.sendMessage(EXTENSION_ID, {
           type: 'SYNC_CANVAS',
           userToken: token,
           apiEndpoint: 'https://du-north.vercel.app/api'
         }, (response) => {
+          console.log('[DuNorth] Extension response:', response);
+          console.log('[DuNorth] Chrome runtime error:', chrome.runtime.lastError);
+          
           if (chrome.runtime.lastError) {
-            reject(new Error('Extension not found. Please install the StudyHackz extension first.'));
+            const errorMsg = `Extension communication failed: ${chrome.runtime.lastError.message}. Extension ID: ${EXTENSION_ID}. Make sure StudyHackz extension is installed and enabled.`;
+            console.error('[DuNorth]', errorMsg);
+            reject(new Error(errorMsg));
+          } else if (!response) {
+            const errorMsg = 'Extension returned no response. Check extension console for errors.';
+            console.error('[DuNorth]', errorMsg);
+            reject(new Error(errorMsg));
           } else {
             resolve(response);
           }
         });
       } catch (error) {
-        reject(new Error('Extension not available. Please install the StudyHackz extension.'));
+        const errorMsg = `Extension messaging error: ${error.message}. Make sure you're on HTTPS and extension is installed.`;
+        console.error('[DuNorth]', errorMsg);
+        reject(new Error(errorMsg));
       }
     });
     
@@ -51,12 +64,27 @@ refreshBtn.addEventListener('click', async () => {
     }
     
   } catch (error) {
-    console.error('Sync error:', error);
-    if (error.message.includes('Extension')) {
-      banner('❌ Extension not installed. Please install the StudyHackz extension first and make sure you have a Canvas tab open.');
+    console.error('[DuNorth] Detailed sync error:', error);
+    console.error('[DuNorth] Error stack:', error.stack);
+    
+    // Show detailed error in chat
+    let errorMessage = error.message;
+    
+    if (error.message.includes('Extension communication failed')) {
+      errorMessage = `🔌 ${error.message}`;
+    } else if (error.message.includes('Extension returned no response')) {
+      errorMessage = `📵 ${error.message}`;
+    } else if (error.message.includes('Canvas session')) {
+      errorMessage = `🍪 ${error.message}`;
+    } else if (error.message.includes('Canvas API')) {
+      errorMessage = `🌐 ${error.message}`;
+    } else if (error.message.includes('Backend ingest')) {
+      errorMessage = `💾 ${error.message}`;
     } else {
-      banner(`❌ Sync failed: ${error.message}`);
+      errorMessage = `❌ Sync failed: ${error.message}`;
     }
+    
+    banner(errorMessage);
     refreshBtn.textContent = 'Sync Failed';
   }
   
