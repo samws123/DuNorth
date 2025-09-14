@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
+function isUuid(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v); }
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   
@@ -11,30 +13,39 @@ export default async function handler(req, res) {
     await ensureSchema();
     
     // Extract userId from JWT token
-    let userId = null;
+    let tokenUserId = null;
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const token = authHeader.slice(7);
         const decoded = jwt.verify(token, JWT_SECRET);
-        userId = decoded.userId;
+        tokenUserId = decoded.userId;
       } catch (e) {
         return res.status(401).json({ error: 'Invalid token' });
       }
     }
-    
-    if (!userId) return res.status(400).json({ error: 'userId required' });
+    if (!tokenUserId) return res.status(400).json({ error: 'userId required' });
+
+    // Ensure we have a real users.id UUID to reference
+    let userId = tokenUserId;
+    if (!isUuid(userId)) {
+      // Create or fetch a placeholder user for this identifier
+      const email = `${String(tokenUserId).replace(/[^a-zA-Z0-9._-]/g,'_')}@local.test`;
+      const up = await query(
+        `INSERT INTO users(email, name) VALUES($1,$2)
+         ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id`,
+        [email, 'Cookie Test User']
+      );
+      userId = up.rows[0].id;
+    }
     
     const { baseUrl, sessionCookie, userInfo } = req.body || {};
-    
     if (!baseUrl || !sessionCookie) {
       return res.status(400).json({ error: 'baseUrl and sessionCookie required' });
     }
     
     console.log(`[Store Session] Storing Canvas session for user ${userId}`);
-    console.log(`[Store Session] Base URL: ${baseUrl}`);
-    console.log(`[Store Session] Cookie length: ${sessionCookie.length}`);
-    console.log(`[Store Session] Canvas user: ${userInfo?.name || 'unknown'}`);
     
     // Store session cookie and Canvas user info
     await query(`
@@ -69,6 +80,6 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('[Store Session] Error:', error);
-    return res.status(500).json({ error: 'Failed to store session' });
+    return res.status(500).json({ error: 'Failed to store session', detail: String(error.message || error) });
   }
 }
