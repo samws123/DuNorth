@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "mongodb": "^6.6.0",
-    "openai": "^4.56.0"
+    "openai": "^4.56.0",
+    "pg": "^8.11.5",
+    "bcryptjs": "^2.4.3"
   }
 }
 
