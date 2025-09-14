@@ -7,7 +7,7 @@ const catalog = [
   { name: 'University of Chicago', lms: 'canvas', baseUrl: 'https://canvas.uchicago.edu' },
   { name: 'Yale University', lms: 'canvas', baseUrl: 'https://canvas.yale.edu' },
   { name: 'Columbia University (CourseWorks)', lms: 'canvas', baseUrl: 'https://courseworks.columbia.edu' },
-  { name: 'Princeton University', lms: 'canvas', baseUrl: 'https://canvas.princeton.edu' },
+  { name: 'Princeton University', lms: 'canvas', baseUrl: 'https://princeton.instructure.com' },
   { name: 'University of Pennsylvania', lms: 'canvas', baseUrl: 'https://canvas.upenn.edu' },
   { name: 'University of Michigan', lms: 'canvas', baseUrl: 'https://canvas.umich.edu' },
   { name: 'Penn State', lms: 'canvas', baseUrl: 'https://psu.instructure.com' },

@@ -24,7 +24,7 @@ refreshBtn.addEventListener('click', async () => {
     banner('🔄 Starting Canvas sync...');
     
     // Send message to extension (need to get actual extension ID after loading)
-    const EXTENSION_ID = 'your-extension-id-here'; // Will be updated after loading extension
+    const EXTENSION_ID = 'elipinieeokobcniibdafjkbifbfencb'; // Clean extension ID
     const response = await new Promise((resolve, reject) => {
       try {
         chrome.runtime.sendMessage(EXTENSION_ID, {
