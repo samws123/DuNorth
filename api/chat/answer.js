@@ -3,11 +3,25 @@ import { ensureSchema } from '../_lib/ensureSchema.js';
 import OpenAI from 'openai';
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
+function isUuid(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v); }
+async function resolveUserId(raw) {
+  if (isUuid(raw)) return raw;
+  const email = `${String(raw).replace(/[^a-zA-Z0-9._-]/g,'_')}@local.test`;
+  const up = await query(
+    `INSERT INTO users(email, name) VALUES($1,$2)
+     ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+     RETURNING id`,
+    [email, 'Chat Test User']
+  );
+  return up.rows[0].id;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { userId, message } = req.body || {};
-  if (!userId || !message) return res.status(400).json({ error: 'userId and message required' });
+  const { userId: rawUserId, message } = req.body || {};
+  if (!rawUserId || !message) return res.status(400).json({ error: 'userId and message required' });
   await ensureSchema();
+  const userId = await resolveUserId(rawUserId);
   // Simple rule routing
   const m = message.toLowerCase();
 
