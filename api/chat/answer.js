@@ -10,6 +10,19 @@ export default async function handler(req, res) {
   await ensureSchema();
   // Simple rule routing
   const m = message.toLowerCase();
+
+  if (m.includes('what') && m.includes('my') && (m.includes('class') || m.includes('course'))) {
+    const { rows } = await query(
+      `SELECT id, name, course_code FROM courses WHERE user_id = $1 ORDER BY name ASC LIMIT 100`,
+      [userId]
+    );
+    if (rows.length === 0) {
+      return res.status(200).json({ role: 'assistant', text: 'I don\'t see any courses yet. Click “Refresh Canvas” to sync.' });
+    }
+    const lines = rows.map((c, i) => `${i + 1}. ${c.name}${c.course_code ? ` (${c.course_code})` : ''}`);
+    return res.status(200).json({ role: 'assistant', text: `Your courses:\n\n${lines.join('\n')}` });
+  }
+
   if (m.includes('due') && (m.includes('week') || m.includes('today'))) {
     const now = new Date();
     const end = new Date(now.getTime() + (m.includes('today') ? 1 : 7) * 24 * 60 * 60 * 1000);
