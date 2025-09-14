@@ -7,19 +7,19 @@ let ensured = false;
 export async function ensureSchema() {
   if (ensured) return;
   try {
-    // Check for a core table
     const r = await query(
-      "SELECT to_regclass('public.users') AS exists",
+      "SELECT to_regclass('public.users') AS users_exists, to_regclass('public.user_canvas_sessions') AS sess_exists",
       []
     );
-    if (r.rows[0] && r.rows[0].exists) {
+    const usersOk = r.rows[0]?.users_exists;
+    const sessOk = r.rows[0]?.sess_exists;
+    if (usersOk && sessOk) {
       ensured = true;
       return;
     }
   } catch (_) {
     // fall through to attempt apply
   }
-  // Apply the schema file idempotently
   const sqlPath = path.join(process.cwd(), 'api', '_lib', 'schema.sql');
   const sql = fs.readFileSync(sqlPath, 'utf8');
   await query(sql, []);
