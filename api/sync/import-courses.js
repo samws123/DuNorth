@@ -4,6 +4,19 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
+function isUuid(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v); }
+async function resolveUserId(raw) {
+  if (isUuid(raw)) return raw;
+  const email = `${String(raw).replace(/[^a-zA-Z0-9._-]/g,'_')}@local.test`;
+  const up = await query(
+    `INSERT INTO users(email, name) VALUES($1,$2)
+     ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+     RETURNING id`,
+    [email, 'Cookie Test User']
+  );
+  return up.rows[0].id;
+}
+
 async function callCanvasPaged(baseUrl, cookieValue, path) {
   const tryNames = ['_legacy_normandy_session', 'canvas_session'];
   const out = [];
@@ -42,8 +55,10 @@ export default async function handler(req, res) {
     // Auth
     const auth = req.headers.authorization || '';
     if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing token' });
-    let userId;
-    try { userId = jwt.verify(auth.slice(7), JWT_SECRET).userId; } catch { return res.status(401).json({ error: 'Invalid token' }); }
+    let rawId;
+    try { rawId = jwt.verify(auth.slice(7), JWT_SECRET).userId; } catch { return res.status(401).json({ error: 'Invalid token' }); }
+
+    const userId = await resolveUserId(rawId);
 
     // Session
     const { rows } = await query(
