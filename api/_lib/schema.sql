@@ -65,4 +65,21 @@ CREATE TABLE IF NOT EXISTS sync_requests (
   requested_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Sync cursors for delta syncing
+CREATE TABLE IF NOT EXISTS sync_cursors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  base_url TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  etag TEXT,
+  last_updated_at TIMESTAMPTZ,
+  last_sync TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, base_url, endpoint)
+);
+
+-- Index for fast cursor lookups
+CREATE INDEX IF NOT EXISTS idx_sync_cursors_user_base 
+ON sync_cursors(user_id, base_url);
+
 

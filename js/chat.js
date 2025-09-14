@@ -9,13 +9,61 @@ input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey)
 
 refreshBtn.addEventListener('click', async () => {
   const userId = localStorage.getItem('dunorth_user') || 'demo-user';
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = 'Syncing...';
+  
   try {
-    const r = await fetch('/api/sync/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
-    if (!r.ok) throw new Error('sync failed');
-    banner('Sync requested. Fetching latest from Canvas…');
-  } catch (e) {
-    banner('Could not request sync.');
+    // Get user token for extension authentication
+    const tokenResponse = await fetch('/api/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const { token } = await tokenResponse.json();
+    
+    banner('🔄 Starting Canvas sync...');
+    
+    // Send message to extension (need to get actual extension ID after loading)
+    const EXTENSION_ID = 'your-extension-id-here'; // Will be updated after loading extension
+    const response = await new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage(EXTENSION_ID, {
+          type: 'SYNC_CANVAS',
+          userToken: token,
+          apiEndpoint: 'https://du-north.vercel.app/api'
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error('Extension not found. Please install the StudyHackz extension first.'));
+          } else {
+            resolve(response);
+          }
+        });
+      } catch (error) {
+        reject(new Error('Extension not available. Please install the StudyHackz extension.'));
+      }
+    });
+    
+    if (response?.ok) {
+      banner(`✅ Sync complete! ${response.stats?.courses || 0} courses, ${response.stats?.assignments || 0} assignments`);
+      refreshBtn.textContent = 'Synced!';
+    } else {
+      throw new Error(response?.error || 'Extension sync failed');
+    }
+    
+  } catch (error) {
+    console.error('Sync error:', error);
+    if (error.message.includes('Extension')) {
+      banner('❌ Extension not installed. Please install the StudyHackz extension first and make sure you have a Canvas tab open.');
+    } else {
+      banner(`❌ Sync failed: ${error.message}`);
+    }
+    refreshBtn.textContent = 'Sync Failed';
   }
+  
+  setTimeout(() => {
+    refreshBtn.textContent = 'Refresh Canvas';
+    refreshBtn.disabled = false;
+  }, 3000);
 });
 
 // No extension prompts in chat

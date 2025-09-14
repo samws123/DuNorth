@@ -21,11 +21,29 @@ export default async function handler(req, res) {
        LIMIT 50`,
       [userId, now, end]
     );
-    return res.status(200).json({
-      role: 'assistant',
-      type: 'list',
-      items: rows
-    });
+    
+    // Format with mini AI for nice presentation
+    if (openai && rows.length > 0) {
+      const timeframe = m.includes('today') ? 'today' : 'this week';
+      const assignmentList = rows.map(r => `${r.name} (due ${new Date(r.due_at).toLocaleDateString()})`).join('\n');
+      const prompt = `Format this assignment list for a student asking what's due ${timeframe}. Be helpful and organized:\n\n${assignmentList}`;
+      
+      const r = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 300
+      });
+      return res.status(200).json({ role: 'assistant', text: r.choices?.[0]?.message?.content || '' });
+    }
+    
+    // Fallback formatting if no AI
+    const timeframe = m.includes('today') ? 'today' : 'this week';
+    if (rows.length === 0) {
+      return res.status(200).json({ role: 'assistant', text: `No assignments due ${timeframe}! 🎉` });
+    }
+    const formatted = rows.map((r, i) => `${i + 1}. ${r.name} (due ${new Date(r.due_at).toLocaleDateString()})`).join('\n');
+    return res.status(200).json({ role: 'assistant', text: `Assignments due ${timeframe}:\n\n${formatted}` });
   }
 
   // Fallback: minimal LLM if key present, otherwise echo

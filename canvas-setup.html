@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Your Canvas - DuNorth</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Connect Your Canvas Account</h1>
+            <p>To sync your Canvas data, we need your session cookie. This is completely safe and only used to access your own data.</p>
+            
+            <div class="steps">
+                <h3>Step 1: Open Your Canvas</h3>
+                <p>Go to your Canvas site (e.g., <span id="school-url">canvas.princeton.edu</span>) and log in.</p>
+                
+                <h3>Step 2: Get Your Session Cookie</h3>
+                <p>1. Press <strong>F12</strong> (or right-click → Inspect)</p>
+                <p>2. Go to the <strong>Application</strong> tab</p>
+                <p>3. Click <strong>Cookies</strong> → Your Canvas site</p>
+                <p>4. Find the cookie named <strong>_legacy_normandy_session</strong></p>
+                <p>5. Copy the entire <strong>Value</strong></p>
+                
+                <h3>Step 3: Paste Below</h3>
+                <textarea id="session-cookie" placeholder="Paste your session cookie here..." rows="4"></textarea>
+                
+                <button id="connect-btn" class="btn btn-primary">Connect Canvas</button>
+                <button id="test-btn" class="btn btn-secondary" style="display:none;">Test Connection</button>
+            </div>
+            
+            <div id="status" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        const schoolUrl = localStorage.getItem('dunorth_school_url') || 'https://canvas.princeton.edu';
+        document.getElementById('school-url').textContent = schoolUrl.replace('https://', '');
+        
+        const connectBtn = document.getElementById('connect-btn');
+        const testBtn = document.getElementById('test-btn');
+        const sessionCookie = document.getElementById('session-cookie');
+        const status = document.getElementById('status');
+        
+        connectBtn.addEventListener('click', async () => {
+            const cookie = sessionCookie.value.trim();
+            if (!cookie) {
+                status.innerHTML = '❌ Please paste your session cookie';
+                return;
+            }
+            
+            // Store the session cookie
+            localStorage.setItem('dunorth_canvas_session', cookie);
+            
+            // Test the connection
+            await testConnection(cookie);
+        });
+        
+        testBtn.addEventListener('click', () => {
+            const cookie = localStorage.getItem('dunorth_canvas_session');
+            testConnection(cookie);
+        });
+        
+        async function testConnection(cookie) {
+            status.innerHTML = '🔄 Testing connection...';
+            
+            try {
+                const response = await fetch('/api/canvas/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        canvasUrl: schoolUrl,
+                        endpoint: 'courses?enrollment_state=active&per_page=5',
+                        sessionCookie: `_legacy_normandy_session=${cookie}`
+                    })
+                });
+                
+                if (response.ok) {
+                    const courses = await response.json();
+                    status.innerHTML = `✅ Connected! Found ${courses.length} courses. <a href="chat/chat.html">Go to Chat</a>`;
+                    testBtn.style.display = 'inline-block';
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                status.innerHTML = '❌ Connection failed. Check your cookie and try again.';
+            }
+        }
+        
+        // Auto-test if we already have a cookie
+        const existingCookie = localStorage.getItem('dunorth_canvas_session');
+        if (existingCookie) {
+            sessionCookie.value = existingCookie;
+            testBtn.style.display = 'inline-block';
+        }
+    </script>
+</body>
+</html>
