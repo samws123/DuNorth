@@ -1,4 +1,5 @@
 import { query } from '../_lib/pg.js';
+import { ensureSchema } from '../_lib/ensureSchema.js';
 import OpenAI from 'openai';
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
@@ -6,6 +7,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const { userId, message } = req.body || {};
   if (!userId || !message) return res.status(400).json({ error: 'userId and message required' });
+  await ensureSchema();
   // Simple rule routing
   const m = message.toLowerCase();
   if (m.includes('due') && (m.includes('week') || m.includes('today'))) {
