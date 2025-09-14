@@ -1,4 +1,5 @@
 import { query } from '../_lib/pg.js';
+import { ensureSchema } from '../_lib/ensureSchema.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
@@ -7,6 +8,7 @@ export default async function handler(req, res) {
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
   const hash = await bcrypt.hash(password, 10);
   try {
+    await ensureSchema();
     const r = await query('INSERT INTO users(email, name, password_hash) VALUES($1,$2,$3) ON CONFLICT (email) DO NOTHING RETURNING id', [email, name || null, hash]);
     if (!r.rowCount) return res.status(409).json({ error: 'email_exists' });
     return res.status(200).json({ ok: true, userId: r.rows[0].id });
