@@ -99,6 +99,10 @@ refreshBtn.addEventListener('click', async () => {
     }
 
     if (res?.ok) {
+      try {
+        const imp = await fetch('/api/sync/import-courses', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json());
+        if (imp?.ok) banner(`📥 Imported ${imp.imported} courses from ${imp.baseUrl}`);
+      } catch {}
       banner('✅ Canvas session stored. Server will sync your data.');
       refreshBtn.textContent = 'Synced!';
     } else {
