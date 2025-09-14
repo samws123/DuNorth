@@ -59,6 +59,50 @@ CREATE TABLE IF NOT EXISTS assignments (
 
 CREATE INDEX IF NOT EXISTS idx_assignments_user_due ON assignments(user_id, due_at);
 
+-- Canvas pages
+CREATE TABLE IF NOT EXISTS pages (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  id BIGINT,
+  course_id BIGINT,
+  title TEXT,
+  url TEXT,
+  body TEXT,
+  raw_json JSONB,
+  PRIMARY KEY (user_id, id)
+);
+
+-- Canvas files with download URLs
+CREATE TABLE IF NOT EXISTS files (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  id BIGINT,
+  course_id BIGINT,
+  filename TEXT,
+  content_type TEXT,
+  size BIGINT,
+  download_url TEXT,
+  public_download_url TEXT,
+  extracted_text TEXT,
+  raw_json JSONB,
+  PRIMARY KEY (user_id, id)
+);
+
+-- Canvas announcements
+CREATE TABLE IF NOT EXISTS announcements (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  id BIGINT,
+  course_id BIGINT,
+  title TEXT,
+  message TEXT,
+  posted_at TIMESTAMPTZ,
+  raw_json JSONB,
+  PRIMARY KEY (user_id, id)
+);
+
+-- Indexes for fast lookups
+CREATE INDEX IF NOT EXISTS idx_pages_user_course ON pages(user_id, course_id);
+CREATE INDEX IF NOT EXISTS idx_files_user_course ON files(user_id, course_id);
+CREATE INDEX IF NOT EXISTS idx_announcements_user_course ON announcements(user_id, course_id);
+
 CREATE TABLE IF NOT EXISTS sync_requests (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -81,5 +125,24 @@ CREATE TABLE IF NOT EXISTS sync_cursors (
 -- Index for fast cursor lookups
 CREATE INDEX IF NOT EXISTS idx_sync_cursors_user_base 
 ON sync_cursors(user_id, base_url);
+
+-- Canvas session storage for cookie-based backend sync
+CREATE TABLE IF NOT EXISTS user_canvas_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  base_url TEXT NOT NULL,
+  session_cookie TEXT NOT NULL,
+  canvas_user_id TEXT,
+  canvas_name TEXT,
+  canvas_email TEXT,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, base_url)
+);
+
+-- Index for fast session lookups
+CREATE INDEX IF NOT EXISTS idx_user_canvas_sessions_user 
+ON user_canvas_sessions(user_id);
 
 

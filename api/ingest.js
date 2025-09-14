@@ -47,6 +47,39 @@ export default async function handler(req, res) {
       counts.assignments = items.assignments.length;
     }
 
+    // pages
+    if (Array.isArray(items.pages)) {
+      for (const p of items.pages) {
+        await query(
+          'INSERT INTO pages(user_id, id, course_id, title, url, body, raw_json) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (user_id,id) DO UPDATE SET course_id=EXCLUDED.course_id, title=EXCLUDED.title, url=EXCLUDED.url, body=EXCLUDED.body, raw_json=EXCLUDED.raw_json',
+          [userId, p.id || p.page_id, p.course_id, p.title || null, p.url || null, p.body || null, p]
+        );
+      }
+      counts.pages = items.pages.length;
+    }
+
+    // files with download URLs
+    if (Array.isArray(items.files)) {
+      for (const f of items.files) {
+        await query(
+          'INSERT INTO files(user_id, id, course_id, filename, content_type, size, download_url, public_download_url, raw_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (user_id,id) DO UPDATE SET course_id=EXCLUDED.course_id, filename=EXCLUDED.filename, content_type=EXCLUDED.content_type, size=EXCLUDED.size, download_url=EXCLUDED.download_url, public_download_url=EXCLUDED.public_download_url, raw_json=EXCLUDED.raw_json',
+          [userId, f.id, f.course_id, f.filename || f.display_name || null, f['content-type'] || null, f.size || null, f.url || null, f.public_download_url || null, f]
+        );
+      }
+      counts.files = items.files.length;
+    }
+
+    // announcements
+    if (Array.isArray(items.announcements)) {
+      for (const ann of items.announcements) {
+        await query(
+          'INSERT INTO announcements(user_id, id, course_id, title, message, posted_at, raw_json) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (user_id,id) DO UPDATE SET course_id=EXCLUDED.course_id, title=EXCLUDED.title, message=EXCLUDED.message, posted_at=EXCLUDED.posted_at, raw_json=EXCLUDED.raw_json',
+          [userId, ann.id, ann.course_id, ann.title || null, ann.message || null, ann.posted_at ? new Date(ann.posted_at) : null, ann]
+        );
+      }
+      counts.announcements = items.announcements.length;
+    }
+
     // user profile baseUrl save
     if (baseUrl) {
       await query(
