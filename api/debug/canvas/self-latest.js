@@ -33,9 +33,28 @@ export default async function handler(req, res) {
        LIMIT 1`
     );
     if (!rows.length) return res.status(404).json({ ok: false, error: 'no_session' });
-    const { user_id: userId, base_url: baseUrl, session_cookie: cookieValue } = rows[0];
-    const me = await callCanvasSelf(baseUrl, cookieValue);
-    return res.status(200).json({ ok: true, userId, baseUrl, me: { id: me.id, name: me.name, login_id: me.login_id } });
+    const { user_id: userId, base_url: storedBase, session_cookie: cookieValue } = rows[0];
+    // Try stored base first, then known Princeton hosts as fallbacks (debug only)
+    const candidates = [];
+    if (storedBase) candidates.push(storedBase);
+    const hostOnly = (storedBase || '').replace(/^https?:\/\//, '');
+    if (hostOnly === 'instructure.com' || hostOnly.split('.').length < 3) {
+      candidates.push('https://princeton.instructure.com');
+    }
+    // Always include Princeton as explicit debug fallback for this test
+    if (!candidates.includes('https://princeton.instructure.com')) candidates.push('https://princeton.instructure.com');
+    if (!candidates.includes('https://canvas.princeton.edu')) candidates.push('https://canvas.princeton.edu');
+
+    let lastErr = null;
+    for (const baseUrl of candidates) {
+      try {
+        const me = await callCanvasSelf(baseUrl, cookieValue);
+        return res.status(200).json({ ok: true, userId, baseUrl, me: { id: me.id, name: me.name, login_id: me.login_id } });
+      } catch (e) {
+        lastErr = String(e.message || e);
+      }
+    }
+    return res.status(500).json({ ok: false, error: lastErr || 'unknown_error' });
   } catch (e) {
     return res.status(500).json({ ok: false, error: String(e.message || e) });
   }
