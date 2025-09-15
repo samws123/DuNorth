@@ -11,7 +11,8 @@
     "openai": "^4.56.0",
     "pg": "^8.11.5",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.0"
+    "jsonwebtoken": "^9.0.0",
+    "pdf-parse": "^1.1.1"
   }
 }
 
