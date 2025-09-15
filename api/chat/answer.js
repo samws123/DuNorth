@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ role: 'assistant', text: 'I don\'t have your name yet. Click “Refresh Canvas”.' });
   }
 
-  if (m.includes('what') && m.includes('my') && (m.includes('class') || m.includes('course'))) {
+  if (m.includes('what') && m.includes('my') && (m.includes('class') || m.includes('course') || m.includes('courses') || m.includes('cours'))) {
     const { rows } = await query(
       `SELECT id, name, course_code FROM courses WHERE user_id = $1 ORDER BY name ASC LIMIT 100`,
       [userId]
