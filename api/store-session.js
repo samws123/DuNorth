@@ -6,6 +6,37 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 function isUuid(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v); }
 
+async function callCanvasPaged(baseUrl, cookieValue, path) {
+  const tryNames = ['_legacy_normandy_session', 'canvas_session'];
+  const out = [];
+  let url = `${baseUrl}${path}`;
+  for (let page = 0; page < 50 && url; page++) {
+    let resp;
+    for (const name of tryNames) {
+      resp = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Cookie': `${name}=${cookieValue}`,
+          'User-Agent': 'DuNorth-Server/1.0'
+        },
+        redirect: 'follow'
+      });
+      if (resp.ok) break;
+      if (![401,403].includes(resp.status)) break;
+    }
+    if (!resp?.ok) {
+      const txt = await resp.text().catch(()=> '');
+      throw new Error(`Canvas error ${resp?.status}: ${txt.slice(0,300)}`);
+    }
+    const data = await resp.json();
+    if (Array.isArray(data)) out.push(...data);
+    const link = resp.headers.get('Link') || '';
+    const m = /<([^>]+)>;\s*rel="next"/.exec(link);
+    url = m ? m[1] : null;
+  }
+  return out;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   
@@ -29,7 +60,6 @@ export default async function handler(req, res) {
     // Ensure we have a real users.id UUID to reference
     let userId = tokenUserId;
     if (!isUuid(userId)) {
-      // Create or fetch a placeholder user for this identifier
       const email = `${String(tokenUserId).replace(/[^a-zA-Z0-9._-]/g,'_')}@local.test`;
       const up = await query(
         `INSERT INTO users(email, name) VALUES($1,$2)
@@ -44,8 +74,6 @@ export default async function handler(req, res) {
     if (!baseUrl || !sessionCookie) {
       return res.status(400).json({ error: 'baseUrl and sessionCookie required' });
     }
-    
-    console.log(`[Store Session] Storing Canvas session for user ${userId}`);
     
     // Store session cookie and Canvas user info
     await query(`
@@ -66,16 +94,42 @@ export default async function handler(req, res) {
       userInfo?.id || null,
       userInfo?.name || null,
       userInfo?.email || null,
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Expires in 30 days
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     ]);
-    
-    console.log(`[Store Session] Successfully stored session for ${userId}`);
+
+    // Immediately import courses (server-side) so chat can answer
+    let imported = 0;
+    try {
+      const courses = await callCanvasPaged(baseUrl, sessionCookie, '/api/v1/courses?enrollment_state=active&per_page=100');
+      for (const c of courses) {
+        await query(
+          `INSERT INTO courses(user_id, id, name, course_code, term, raw_json)
+           VALUES($1,$2,$3,$4,$5,$6)
+           ON CONFLICT (user_id, id) DO UPDATE
+             SET name = EXCLUDED.name,
+                 course_code = EXCLUDED.course_code,
+                 term = EXCLUDED.term,
+                 raw_json = EXCLUDED.raw_json`,
+          [userId, c.id, c.name || null, c.course_code || null, c.term || null, c]
+        );
+        imported++;
+      }
+    } catch (e) {
+      // Soft-fail import; session is stored, but report the error detail
+      return res.status(200).json({ 
+        ok: true, 
+        message: 'Canvas session stored successfully (import failed)',
+        baseUrl,
+        imported: 0,
+        importError: String(e.message || e)
+      });
+    }
     
     return res.status(200).json({ 
       ok: true, 
       message: 'Canvas session stored successfully',
-      canvasUser: userInfo?.name || 'Unknown',
-      expiresIn: '30 days'
+      baseUrl,
+      imported
     });
     
   } catch (error) {
