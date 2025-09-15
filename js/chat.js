@@ -99,13 +99,7 @@ refreshBtn.addEventListener('click', async () => {
     }
 
     if (res?.ok) {
-      try {
-        // Confirm server-side Canvas auth
-        const selfR = await fetch('/api/debug/canvas/self', { headers: { Authorization: `Bearer ${token}` } });
-        const selfJ = await selfR.json();
-        if (selfR.ok && selfJ?.ok) banner(`🟢 Server Canvas auth OK: ${selfJ.me?.name || selfJ.me?.id}`);
-        else banner(`🔴 Server auth failed: ${selfJ?.error || selfR.status}`);
-      } catch {}
+      // Skip noisy server-auth bubble; course import below proves cookie works
       try {
         const resp = await fetch('/api/sync/import-courses', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         const imp = await resp.json();
@@ -116,6 +110,24 @@ refreshBtn.addEventListener('click', async () => {
         }
       } catch (e) {
         banner(`❌ Import failed: ${e.message || 'network error'}`);
+      }
+      // Hardcoded test: sync a specific course and report counts
+      try {
+        const testCourseId = 20031; // HIS400-S03_F2025 (Princeton)
+        const syncR = await fetch('/api/sync/course', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ courseId: testCourseId })
+        });
+        const syncJ = await syncR.json();
+        if (syncR.ok && syncJ?.ok) {
+          const c = syncJ.counts || {};
+          banner(`✅ Synced course ${testCourseId}: ${c.pages || 0} pages, ${c.files || 0} files, ${c.announcements || 0} announcements.`);
+        } else {
+          banner(`❌ Course sync failed: ${syncJ?.error || syncR.status}`);
+        }
+      } catch (e) {
+        banner(`❌ Course sync failed: ${e.message || 'network error'}`);
       }
       banner('✅ Canvas session stored. Server will sync your data.');
       refreshBtn.textContent = 'Synced!';
