@@ -88,21 +88,35 @@ refreshBtn.addEventListener('click', async () => {
     try {
       res = await new Promise((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('timeout')), 8000);
-        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north.vercel.app/api' }, (r) => {
+        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl: 'https://princeton.instructure.com' }, (r) => {
           clearTimeout(t);
           if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
           resolve(r);
         });
       });
     } catch {
-      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north.vercel.app/api' });
+      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl: 'https://princeton.instructure.com' });
     }
 
     if (res?.ok) {
       try {
-        const imp = await fetch('/api/sync/import-courses', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json());
-        if (imp?.ok) banner(`📥 Imported ${imp.imported} courses from ${imp.baseUrl}`);
+        // Confirm server-side Canvas auth
+        const selfR = await fetch('/api/debug/canvas/self', { headers: { Authorization: `Bearer ${token}` } });
+        const selfJ = await selfR.json();
+        if (selfR.ok && selfJ?.ok) banner(`🟢 Server Canvas auth OK: ${selfJ.me?.name || selfJ.me?.id}`);
+        else banner(`🔴 Server auth failed: ${selfJ?.error || selfR.status}`);
       } catch {}
+      try {
+        const resp = await fetch('/api/sync/import-courses', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+        const imp = await resp.json();
+        if (resp.ok && imp?.ok) {
+          banner(`📥 Imported ${imp.imported} courses from ${imp.baseUrl}`);
+        } else {
+          banner(`❌ Import failed: ${imp?.error || resp.status}`);
+        }
+      } catch (e) {
+        banner(`❌ Import failed: ${e.message || 'network error'}`);
+      }
       banner('✅ Canvas session stored. Server will sync your data.');
       refreshBtn.textContent = 'Synced!';
     } else {

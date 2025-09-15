@@ -37,8 +37,8 @@ async function callCanvasPaged(baseUrl, cookieValue, path) {
   return out;
 }
 
-async function callCanvasJson(baseUrl, cookieValue, path) {
-  const tryNames = ['_legacy_normandy_session', 'canvas_session'];
+async function callCanvasJson(baseUrl, cookieValue, path, preferredName) {
+  const tryNames = preferredName ? [preferredName, '_legacy_normandy_session', 'canvas_session'] : ['canvas_session', '_legacy_normandy_session'];
   for (const name of tryNames) {
     const r = await fetch(`${baseUrl}${path}`, {
       headers: {
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       userId = up.rows[0].id;
     }
     
-    const { baseUrl, sessionCookie } = req.body || {};
+    const { baseUrl, sessionCookie, cookieName, cookieDomain } = req.body || {};
     if (!baseUrl || !sessionCookie) {
       return res.status(400).json({ error: 'baseUrl and sessionCookie required' });
     }
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     // Fetch Canvas user profile (server-side) to confirm auth and capture name/email
     let canvasSelf = null;
     try {
-      canvasSelf = await callCanvasJson(baseUrl, sessionCookie, '/api/v1/users/self');
+      canvasSelf = await callCanvasJson(baseUrl, sessionCookie, '/api/v1/users/self', cookieName);
     } catch (e) {
       // continue; we still store the session (but mark name as null so UI can't confuse sources)
       canvasSelf = null;
