@@ -7,13 +7,15 @@ function isUuid(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-
 async function resolveUserId(raw) {
   if (isUuid(raw)) return raw;
   const email = `${String(raw).replace(/[^a-zA-Z0-9._-]/g,'_')}@local.test`;
-  const up = await query(
+  // Do not overwrite an existing name; only insert if missing
+  const existing = await query(`SELECT id FROM users WHERE email = $1`, [email]);
+  if (existing.rows[0]?.id) return existing.rows[0].id;
+  const inserted = await query(
     `INSERT INTO users(email, name) VALUES($1,$2)
-     ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
      RETURNING id`,
-    [email, 'Chat Test User']
+    [email, 'Chat User']
   );
-  return up.rows[0].id;
+  return inserted.rows[0].id;
 }
 
 export default async function handler(req, res) {
@@ -25,7 +27,21 @@ export default async function handler(req, res) {
   const m = message.toLowerCase();
 
   if (m.includes('what') && m.includes('my') && m.includes('name')) {
-    const r = await query(`SELECT name FROM users WHERE id = $1`, [userId]);
+    // Prefer users.name; if null/blank, fall back to latest canvas_name we stored
+    const r = await query(
+      `WITH u AS (
+         SELECT name FROM users WHERE id = $1
+       ), s AS (
+         SELECT canvas_name
+         FROM user_canvas_sessions
+         WHERE user_id = $1
+         ORDER BY updated_at DESC NULLS LAST, created_at DESC
+         LIMIT 1
+       )
+       SELECT COALESCE(NULLIF(u.name, ''), s.canvas_name) AS name
+       FROM u CROSS JOIN s`,
+      [userId]
+    );
     const name = r.rows[0]?.name || null;
     if (name) return res.status(200).json({ role: 'assistant', text: `Your name on Canvas is ${name}.` });
     return res.status(200).json({ role: 'assistant', text: 'I don\'t have your name yet. Click “Refresh Canvas”.' });
