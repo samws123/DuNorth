@@ -25,9 +25,19 @@ async function handleSubmit(e) {
   if (!ok) return;
   try {
     submitBtn.disabled = true; submitBtn.textContent = 'Creating account…';
-    // Demo only: we just log to console. Replace with POST to your backend.
-    console.log('Signup payload', { name, email });
-    await new Promise(r => setTimeout(r, 400));
+    // Create the user in our backend
+    const r = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      if (data?.error === 'email_exists') { setError('email', 'That email is already registered'); return; }
+      throw new Error(data?.error || 'signup_failed');
+    }
+    // Persist the real UUID for later API calls (chat/extension)
+    if (data?.userId) localStorage.setItem('dunorth_user', data.userId);
     // Redirect to school search after signup
     window.location.href = 'schools/school.html';
   } catch (err) {
