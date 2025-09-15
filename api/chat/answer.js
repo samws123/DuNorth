@@ -22,8 +22,14 @@ export default async function handler(req, res) {
   if (!rawUserId || !message) return res.status(400).json({ error: 'userId and message required' });
   await ensureSchema();
   const userId = await resolveUserId(rawUserId);
-  // Simple rule routing
   const m = message.toLowerCase();
+
+  if (m.includes('what') && m.includes('my') && m.includes('name')) {
+    const r = await query(`SELECT name FROM users WHERE id = $1`, [userId]);
+    const name = r.rows[0]?.name || null;
+    if (name) return res.status(200).json({ role: 'assistant', text: `Your name on Canvas is ${name}.` });
+    return res.status(200).json({ role: 'assistant', text: 'I don\'t have your name yet. Click “Refresh Canvas”.' });
+  }
 
   if (m.includes('what') && m.includes('my') && (m.includes('class') || m.includes('course'))) {
     const { rows } = await query(
@@ -49,22 +55,20 @@ export default async function handler(req, res) {
       [userId, now, end]
     );
     
-    // Format with mini AI for nice presentation
     if (openai && rows.length > 0) {
       const timeframe = m.includes('today') ? 'today' : 'this week';
       const assignmentList = rows.map(r => `${r.name} (due ${new Date(r.due_at).toLocaleDateString()})`).join('\n');
       const prompt = `Format this assignment list for a student asking what's due ${timeframe}. Be helpful and organized:\n\n${assignmentList}`;
       
-      const r = await openai.chat.completions.create({
+      const r2 = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
         max_tokens: 300
       });
-      return res.status(200).json({ role: 'assistant', text: r.choices?.[0]?.message?.content || '' });
+      return res.status(200).json({ role: 'assistant', text: r2.choices?.[0]?.message?.content || '' });
     }
     
-    // Fallback formatting if no AI
     const timeframe = m.includes('today') ? 'today' : 'this week';
     if (rows.length === 0) {
       return res.status(200).json({ role: 'assistant', text: `No assignments due ${timeframe}! 🎉` });
@@ -73,7 +77,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ role: 'assistant', text: `Assignments due ${timeframe}:\n\n${formatted}` });
   }
 
-  // Fallback: minimal LLM if key present, otherwise echo
   if (openai) {
     const prompt = `You are DuNorth, a helpful study assistant. Answer briefly. User: ${message}`;
     const r = await openai.chat.completions.create({
