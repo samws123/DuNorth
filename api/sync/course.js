@@ -88,6 +88,26 @@ export default async function handler(req, res) {
       );
     }
 
+    // Syllabus body (store as a synthetic page entry with negative id)
+    try {
+      const cr = await fetch(`${baseUrl}/api/v1/courses/${courseId}?include[]=syllabus_body`, {
+        headers: { 'Accept': 'application/json', 'Cookie': `canvas_session=${cookieValue}`, 'User-Agent': 'DuNorth-Server/1.0' },
+        redirect: 'follow'
+      });
+      if (cr.ok) {
+        const cj = await cr.json();
+        if (cj?.syllabus_body) {
+          const syntheticId = -1 * Number(courseId);
+          await query(
+            `INSERT INTO pages(user_id, id, course_id, title, url, body, raw_json)
+             VALUES($1,$2,$3,$4,$5,$6,$7)
+             ON CONFLICT (user_id, id) DO UPDATE SET title=EXCLUDED.title, url=EXCLUDED.url, body=EXCLUDED.body, raw_json=EXCLUDED.raw_json`,
+            [userId, syntheticId, courseId, 'Syllabus', 'syllabus', cj.syllabus_body, { source: 'course.syllabus_body' }]
+          );
+        }
+      }
+    } catch {}
+
     // Files with public URLs
     const files = await callCanvasPaged(baseUrl, cookieValue, `/api/v1/courses/${courseId}/files?per_page=100`);
     let savedFiles = 0;
