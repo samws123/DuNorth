@@ -2,24 +2,28 @@ import { query } from '../../_lib/pg.js';
 import { ensureSchema } from '../../_lib/ensureSchema.js';
 
 async function callCanvasSelf(baseUrl, cookieValue) {
-  const tryNames = ['_legacy_normandy_session', 'canvas_session'];
-  for (const name of tryNames) {
-    const r = await fetch(`${baseUrl}/api/v1/users/self`, {
-      headers: {
-        'Accept': 'application/json',
-        'Cookie': `${name}=${cookieValue}`,
-        'User-Agent': 'DuNorth-Debug/1.0'
-      },
-      redirect: 'follow'
-    });
-    const ct = r.headers.get('content-type') || '';
-    if (r.ok && ct.includes('application/json')) return await r.json();
-    if (![401,403].includes(r.status)) {
-      const t = await r.text().catch(()=>'');
-      throw new Error(`Canvas error ${r.status}: ${t.slice(0,200)}`);
+  const tryNames = ['canvas_session', '_legacy_normandy_session'];
+  const tryPaths = ['/api/v1/users/self', '/api/v1/users/self/profile', '/api/v1/profile'];
+  let lastErr = null;
+  for (const path of tryPaths) {
+    for (const name of tryNames) {
+      const r = await fetch(`${baseUrl}${path}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Cookie': `${name}=${cookieValue}`,
+          'User-Agent': 'DuNorth-Debug/1.0'
+        },
+        redirect: 'follow'
+      });
+      const ct = r.headers.get('content-type') || '';
+      if (r.ok && ct.includes('application/json')) return await r.json();
+      if (![401,403].includes(r.status)) {
+        const t = await r.text().catch(()=> '');
+        lastErr = `Canvas error ${r.status}: ${t.slice(0,200)}`;
+      }
     }
   }
-  throw new Error('Unauthorized');
+  throw new Error(lastErr || 'Unauthorized');
 }
 
 export default async function handler(req, res) {
