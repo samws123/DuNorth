@@ -48,7 +48,8 @@ async function callCanvasJson(baseUrl, cookieValue, path) {
       },
       redirect: 'follow'
     });
-    if (r.ok) return await r.json();
+    const ct = r.headers.get('content-type') || '';
+    if (r.ok && ct.includes('application/json')) return await r.json();
     if (![401,403].includes(r.status)) {
       const t = await r.text().catch(()=> '');
       throw new Error(`Canvas error ${r.status}: ${t.slice(0,300)}`);
@@ -100,7 +101,8 @@ export default async function handler(req, res) {
     try {
       canvasSelf = await callCanvasJson(baseUrl, sessionCookie, '/api/v1/users/self');
     } catch (e) {
-      // continue; we still store the session
+      // continue; we still store the session (but mark name as null so UI can't confuse sources)
+      canvasSelf = null;
     }
 
     // Store/update session and canvas identity fields

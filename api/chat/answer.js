@@ -18,6 +18,39 @@ async function resolveUserId(raw) {
   return inserted.rows[0].id;
 }
 
+async function getLatestCanvasSession(userId) {
+  const { rows } = await query(
+    `SELECT base_url, session_cookie
+     FROM user_canvas_sessions
+     WHERE user_id = $1
+     ORDER BY updated_at DESC NULLS LAST, created_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+async function fetchCanvasSelf(baseUrl, cookieValue) {
+  const tryNames = ['_legacy_normandy_session', 'canvas_session'];
+  for (const name of tryNames) {
+    const r = await fetch(`${baseUrl}/api/v1/users/self`, {
+      headers: {
+        'Accept': 'application/json',
+        'Cookie': `${name}=${cookieValue}`,
+        'User-Agent': 'DuNorth-Server/1.0'
+      },
+      redirect: 'follow'
+    });
+    const ct = r.headers.get('content-type') || '';
+    if (r.ok && ct.includes('application/json')) return await r.json();
+    if (![401,403].includes(r.status)) {
+      const t = await r.text().catch(()=> '');
+      throw new Error(`Canvas error ${r.status}: ${t.slice(0,200)}`);
+    }
+  }
+  throw new Error('Unauthorized');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const { userId: rawUserId, message } = req.body || {};
@@ -27,7 +60,20 @@ export default async function handler(req, res) {
   const m = message.toLowerCase();
 
   if (m.includes('what') && m.includes('my') && m.includes('name')) {
-    // Prefer the freshest Canvas name; fall back to users.name
+    // Try live Canvas first using stored cookie (proof that cookies work)
+    try {
+      const sess = await getLatestCanvasSession(userId);
+      if (sess?.base_url && sess?.session_cookie) {
+        const me = await fetchCanvasSelf(sess.base_url, sess.session_cookie);
+        if (me?.name) {
+          // sync back to DB for future fast answers
+          try { await query(`UPDATE users SET name = $1 WHERE id = $2`, [me.name, userId]); } catch {}
+          return res.status(200).json({ role: 'assistant', text: `Your name on Canvas is ${me.name}. (from Canvas)` });
+        }
+      }
+    } catch (_) { /* fall back below */ }
+
+    // Fallback: use stored canvas_name, then users.name
     const r = await query(
       `SELECT COALESCE(
          (SELECT NULLIF(canvas_name,'') FROM user_canvas_sessions WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, created_at DESC LIMIT 1),
