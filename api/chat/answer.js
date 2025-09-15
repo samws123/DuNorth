@@ -27,19 +27,12 @@ export default async function handler(req, res) {
   const m = message.toLowerCase();
 
   if (m.includes('what') && m.includes('my') && m.includes('name')) {
-    // Prefer users.name; if null/blank, fall back to latest canvas_name we stored
+    // Prefer the freshest Canvas name; fall back to users.name
     const r = await query(
-      `WITH u AS (
-         SELECT name FROM users WHERE id = $1
-       ), s AS (
-         SELECT canvas_name
-         FROM user_canvas_sessions
-         WHERE user_id = $1
-         ORDER BY updated_at DESC NULLS LAST, created_at DESC
-         LIMIT 1
-       )
-       SELECT COALESCE(NULLIF(u.name, ''), s.canvas_name) AS name
-       FROM u CROSS JOIN s`,
+      `SELECT COALESCE(
+         (SELECT NULLIF(canvas_name,'') FROM user_canvas_sessions WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, created_at DESC LIMIT 1),
+         (SELECT NULLIF(name,'') FROM users WHERE id = $1)
+       ) AS name`,
       [userId]
     );
     const name = r.rows[0]?.name || null;
