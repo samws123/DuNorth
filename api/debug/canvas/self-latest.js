@@ -45,16 +45,19 @@ export default async function handler(req, res) {
     if (!candidates.includes('https://princeton.instructure.com')) candidates.push('https://princeton.instructure.com');
     if (!candidates.includes('https://canvas.princeton.edu')) candidates.push('https://canvas.princeton.edu');
 
+    const attempts = [];
     let lastErr = null;
     for (const baseUrl of candidates) {
       try {
         const me = await callCanvasSelf(baseUrl, cookieValue);
-        return res.status(200).json({ ok: true, userId, baseUrl, me: { id: me.id, name: me.name, login_id: me.login_id } });
+        return res.status(200).json({ ok: true, userId, baseUrl, me: { id: me.id, name: me.name, login_id: me.login_id }, attempts });
       } catch (e) {
-        lastErr = String(e.message || e);
+        const err = String(e.message || e);
+        attempts.push({ baseUrl, error: err.slice(0, 180) });
+        lastErr = err;
       }
     }
-    return res.status(500).json({ ok: false, error: lastErr || 'unknown_error' });
+    return res.status(500).json({ ok: false, error: lastErr || 'unknown_error', attempts });
   } catch (e) {
     return res.status(500).json({ ok: false, error: String(e.message || e) });
   }
