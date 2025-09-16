@@ -30,8 +30,8 @@ export default async function handler(req, res) {
     const MAX_FULL = 200_000; // hard cap to avoid huge payloads
     const PREVIEW = 8000;
 
-    const { rows } = await query(
-      `SELECT id, filename, content_type, size,
+    let { rows } = await query(
+      `SELECT id, filename, content_type, size, public_download_url,
               COALESCE(length(extracted_text),0) AS text_len,
               CASE WHEN extracted_text IS NULL THEN NULL
                    WHEN $3 THEN SUBSTRING(extracted_text FROM 1 FOR $4)
@@ -44,6 +44,46 @@ export default async function handler(req, res) {
     );
 
     if (!rows[0]) return res.status(404).json({ error: 'file_not_found' });
+
+    // If no text stored, try to auto-extract now (PDFs only)
+    if (Number(rows[0].text_len) === 0) {
+      const filename = String(rows[0].filename || '');
+      const contentType = String(rows[0].content_type || '');
+      const isPdf = filename.toLowerCase().endsWith('.pdf') || contentType.toLowerCase().includes('pdf');
+      if (isPdf && rows[0].public_download_url) {
+        try {
+          let pdfParseFn = null;
+          try { const mod = await import('pdf-parse'); pdfParseFn = (mod && (mod.default || mod)); } catch {}
+          if (pdfParseFn) {
+            const MAX = 20 * 1024 * 1024;
+            const fr = await fetch(rows[0].public_download_url, { headers: { 'User-Agent': 'DuNorth-Debug/1.0' } });
+            if (fr.ok) {
+              const buf = Buffer.from(await fr.arrayBuffer());
+              if (buf.length <= MAX) {
+                const parsed = await pdfParseFn(buf).catch(() => null);
+                const text = parsed?.text ? String(parsed.text).trim() : null;
+                if (text) {
+                  await query(`UPDATE files SET extracted_text = $1 WHERE id = $2`, [text.slice(0, 5_000_000), fileId]);
+                  rows = (await query(
+                    `SELECT id, filename, content_type, size,
+                            COALESCE(length(extracted_text),0) AS text_len,
+                            CASE WHEN extracted_text IS NULL THEN NULL
+                                 WHEN $3 THEN SUBSTRING(extracted_text FROM 1 FOR $4)
+                                 ELSE SUBSTRING(extracted_text FROM 1 FOR $5)
+                            END AS text
+                     FROM files
+                     WHERE user_id = $1 AND id = $2
+                     LIMIT 1`,
+                    [userId, fileId, full, MAX_FULL, PREVIEW]
+                  )).rows;
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
     return res.status(200).json({ ok: true, file: rows[0], truncated: rows[0].text ? rows[0].text.length < rows[0].text_len : true });
   } catch (e) {
     return res.status(500).json({ ok: false, error: String(e.message || e) });
