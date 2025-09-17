@@ -109,7 +109,10 @@ refreshBtn.addEventListener('click', async () => {
           try {
             const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
             const list = await listR.json();
-            const courses = Array.isArray(list?.courses) ? list.courses : [];
+            const coursesAll = Array.isArray(list?.courses) ? list.courses : [];
+            // Hardcode test course for now
+            const targetIds = [20031];
+            const courses = coursesAll.filter(c => targetIds.includes(c.id));
             for (const c of courses) {
               banner(`⏳ Syncing course ${c.id}…`);
               try {
@@ -132,6 +135,14 @@ refreshBtn.addEventListener('click', async () => {
                 }
               } catch(e) { banner(`❌ Extract ${c.id} error: ${e.message}`); }
             }
+            // Trigger client-side extractor in a hidden iframe (uses pdf.js in browser)
+            try {
+              const ifr = document.createElement('iframe');
+              ifr.style.width = '0'; ifr.style.height = '0'; ifr.style.border = '0'; ifr.style.position = 'absolute'; ifr.style.left = '-9999px';
+              ifr.src = `/extract-course.html?courseId=20031&silent=1`;
+              document.body.appendChild(ifr);
+              banner('🧠 Client extract started for course 20031');
+            } catch (_) {}
           } catch (e) {
             banner(`⚠️ Could not auto-extract for all courses: ${e.message}`);
           }

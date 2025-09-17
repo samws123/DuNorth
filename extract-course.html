@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Course Extract</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;font-size:14px;margin:12px}</style>
+  </head>
+  <body>
+    <div id="log">Starting…</div>
+    <script>
+      (async () => {
+        const p = new URLSearchParams(location.search);
+        const courseId = Number(p.get('courseId')||'20031');
+        const silent = p.get('silent')==='1';
+        const logEl = document.getElementById('log');
+        const log = (m)=>{ if(!silent){ logEl.textContent += '\n'+m; } };
+
+        try{
+          // List files for course
+          const filesR = await fetch(`/api/debug/files-db?courseId=${courseId}`);
+          const filesJ = await filesR.json();
+          if(!filesR.ok||!filesJ?.ok){ log('files list error'); return; }
+          const files = filesJ.files||[];
+          log(`Found ${files.length} files`);
+
+          for(const f of files){
+            if (Number(f.text_len||0)>0) continue; // already has text
+            // Fetch meta to get public URL
+            const metaR = await fetch(`/api/debug/file-meta?fileId=${f.id}`);
+            const meta = await metaR.json();
+            const url = meta?.file?.public_download_url;
+            if(!url) continue;
+            try{
+              const r = await fetch(url, { mode:'cors' });
+              if(!r.ok) continue;
+              const buf = await r.arrayBuffer();
+              const pdf = await pdfjsLib.getDocument({ data:new Uint8Array(buf) }).promise;
+              let text='';
+              for(let i=1;i<=pdf.numPages;i++){
+                const page = await pdf.getPage(i);
+                const tc = await page.getTextContent();
+                text += tc.items.map(it=>it.str||'').join(' ')+'\n';
+              }
+              text = text.trim();
+              if(text){
+                await fetch('/api/debug/store-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:f.id,text})});
+                log(`Stored text for ${f.filename}`);
+              }
+            }catch(_){/* skip */}
+          }
+          log('Done');
+        }catch(e){ log('error '+(e.message||e)); }
+      })();
+    </script>
+  </body>
+  </html>
+
+
