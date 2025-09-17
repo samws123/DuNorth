@@ -105,6 +105,36 @@ refreshBtn.addEventListener('click', async () => {
         const imp = await resp.json();
         if (resp.ok && imp?.ok) {
           banner(`📥 Imported ${imp.imported} courses from ${imp.baseUrl}`);
+          // Auto-sync and extract for all courses
+          try {
+            const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
+            const list = await listR.json();
+            const courses = Array.isArray(list?.courses) ? list.courses : [];
+            for (const c of courses) {
+              banner(`⏳ Syncing course ${c.id}…`);
+              try {
+                const sR = await fetch('/api/sync/course', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ courseId: c.id }) });
+                const sJ = await sR.json();
+                if (sR.ok && sJ?.ok) {
+                  banner(`✅ Synced ${c.id}: ${sJ.counts?.pages || 0} pages, ${sJ.counts?.files || 0} files`);
+                } else {
+                  banner(`❌ Sync ${c.id} failed: ${sJ?.error || sR.status}`);
+                }
+              } catch(e) { banner(`❌ Sync ${c.id} error: ${e.message}`); }
+              // Extract text for the course files (multi-format)
+              try {
+                const eR = await fetch('/api/sync/extract-all', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ courseId: c.id, limit: 200, force: false }) });
+                const eJ = await eR.json();
+                if (eR.ok && eJ?.ok) {
+                  banner(`🧠 Extracted ${eJ.stored} texts in course ${c.id} (processed ${eJ.processed}).`);
+                } else {
+                  banner(`❌ Extract ${c.id} failed: ${eJ?.error || eR.status}`);
+                }
+              } catch(e) { banner(`❌ Extract ${c.id} error: ${e.message}`); }
+            }
+          } catch (e) {
+            banner(`⚠️ Could not auto-extract for all courses: ${e.message}`);
+          }
         } else {
           banner(`❌ Import failed: ${imp?.error || resp.status}`);
         }
