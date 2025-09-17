@@ -111,7 +111,7 @@ export default async function handler(req, res) {
     const files = await callCanvasPaged(baseUrl, cookieValue, `/api/v1/courses/${courseId}/files?per_page=100`);
     let savedFiles = 0;
     // Load PDF parser lazily so the route still works if the module isn't present
-    const { extractPdfTextFromBuffer } = await import('../_lib/pdf.js');
+    const { extractTextUniversal } = await import('../_lib/extractText.js');
     for (const f of files) {
       let publicUrl = null;
       try {
@@ -124,7 +124,7 @@ export default async function handler(req, res) {
       let extractedText = null;
       try {
         const isPdf = (f.content_type || '').includes('pdf') || String(f.display_name || f.filename || '').toLowerCase().endsWith('.pdf');
-        if (publicUrl && isPdf) {
+        if (publicUrl) {
           const MAX_PDF_BYTES = 15 * 1024 * 1024;
           const fr = await fetch(publicUrl, { headers: { 'User-Agent': 'DuNorth-Server/1.0' } });
           if (fr.ok) {
@@ -132,7 +132,7 @@ export default async function handler(req, res) {
             if (!len || len <= MAX_PDF_BYTES) {
               const buf = Buffer.from(await fr.arrayBuffer());
               if (buf.length <= MAX_PDF_BYTES) {
-                const text = await extractPdfTextFromBuffer(buf).catch(() => null);
+                const text = await extractTextUniversal(buf, f.display_name || f.filename || '', f.content_type || '').catch(() => null);
                 extractedText = text ? String(text).trim().slice(0, 2_000_000) : null;
               }
             }
