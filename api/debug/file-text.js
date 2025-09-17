@@ -52,16 +52,14 @@ export default async function handler(req, res) {
       const isPdf = filename.toLowerCase().endsWith('.pdf') || contentType.toLowerCase().includes('pdf');
       if (isPdf && rows[0].public_download_url) {
         try {
-          let pdfParseFn = null;
-          try { const mod = await import('pdf-parse'); pdfParseFn = (mod && (mod.default || mod)); } catch {}
-          if (pdfParseFn) {
+          const { extractPdfTextFromBuffer } = await import('../_lib/pdf.js');
+          if (extractPdfTextFromBuffer) {
             const MAX = 20 * 1024 * 1024;
             const fr = await fetch(rows[0].public_download_url, { headers: { 'User-Agent': 'DuNorth-Debug/1.0' } });
             if (fr.ok) {
               const buf = Buffer.from(await fr.arrayBuffer());
               if (buf.length <= MAX) {
-                const parsed = await pdfParseFn(buf).catch(() => null);
-                const text = parsed?.text ? String(parsed.text).trim() : null;
+                const text = await extractPdfTextFromBuffer(buf).catch(() => null);
                 if (text) {
                   await query(`UPDATE files SET extracted_text = $1 WHERE id = $2`, [text.slice(0, 5_000_000), fileId]);
                   rows = (await query(

@@ -46,18 +46,16 @@ export default async function handler(req, res) {
     if (!publicUrl) return res.status(502).json({ error: 'no_public_url' });
 
     // Lazy import pdf-parse
-    let pdfParseFn = null;
-    try { const mod = await import('pdf-parse'); pdfParseFn = (mod && (mod.default || mod)); } catch {}
+    const { extractPdfTextFromBuffer } = await import('../_lib/pdf.js');
     const isPdf = (content_type || '').toLowerCase().includes('pdf') || String(filename || '').toLowerCase().endsWith('.pdf');
-    if (!isPdf || !pdfParseFn) return res.status(200).json({ ok: true, fileId, parsed: false, reason: !isPdf ? 'not_pdf' : 'parser_unavailable' });
+    if (!isPdf) return res.status(200).json({ ok: true, fileId, parsed: false, reason: 'not_pdf' });
 
     const MAX = 25 * 1024 * 1024;
     const fR = await fetch(publicUrl, { headers: { 'User-Agent': 'DuNorth-Debug/1.0' } });
     if (!fR.ok) return res.status(502).json({ error: `download_failed ${fR.status}` });
     const buf = Buffer.from(await fR.arrayBuffer());
     if (buf.length > MAX) return res.status(200).json({ ok: true, fileId, parsed: false, reason: 'too_large', size: buf.length });
-    const parsed = await pdfParseFn(buf).catch(() => null);
-    const text = parsed?.text ? String(parsed.text).trim() : null;
+    const text = await extractPdfTextFromBuffer(buf).catch(() => null);
     if (!text) return res.status(200).json({ ok: true, fileId, parsed: false, reason: 'no_text' });
 
     await query(`UPDATE files SET extracted_text = $1 WHERE id = $2`, [text.slice(0, 5_000_000), fileId]);
