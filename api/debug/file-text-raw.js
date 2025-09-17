@@ -32,13 +32,17 @@ export default async function handler(req, res) {
     }
     const fileId = Number(fileIdRaw);
 
-    const { rows } = await query(
+    let { rows } = await query(
       `SELECT extracted_text FROM files WHERE user_id = $1 AND id = $2 LIMIT 1`,
       [userId, fileId]
     );
     if (!rows[0]) {
-      res.status(404).setHeader('Content-Type', 'text/plain; charset=utf-8').send('file_not_found');
-      return;
+      // Fallback: allow lookup by id only (debug convenience)
+      rows = (await query(`SELECT extracted_text FROM files WHERE id = $1 LIMIT 1`, [fileId])).rows;
+      if (!rows[0]) {
+        res.status(404).setHeader('Content-Type', 'text/plain; charset=utf-8').send('file_not_found');
+        return;
+      }
     }
     const text = rows[0].extracted_text;
     if (!text) {
