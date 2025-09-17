@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   await ensureSchema();
   const userId = await resolveUserId(rawUserId);
   const m = message.toLowerCase();
-
+  try {
   // Helper: parse optional course filter (numeric course id or fuzzy name/code at the end)
   async function parseCourseFilter(text) {
     const idMatch = text.match(/course\s*(?:id\s*)?(\d{3,})/) || text.match(/\bid\s*(\d{3,})\b/);
@@ -175,6 +175,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ role: 'assistant', text: r.choices?.[0]?.message?.content || '' });
   }
   return res.status(200).json({ role: 'assistant', text: 'Ask about assignments due; LLM disabled in demo.' });
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    return res.status(200).json({ role: 'assistant', text: `Server error: ${msg}` });
+  }
 }
 
 
