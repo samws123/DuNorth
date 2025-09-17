@@ -105,6 +105,13 @@ refreshBtn.addEventListener('click', async () => {
         const imp = await resp.json();
         if (resp.ok && imp?.ok) {
           banner(`📥 Imported ${imp.imported} courses from ${imp.baseUrl}`);
+          // Import assignments for all courses
+          try {
+            const ar = await fetch('/api/sync/import-assignments', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+            const aj = await ar.json();
+            if (ar.ok && aj?.ok) banner(`📝 Imported ${aj.imported} assignments.`);
+            else banner(`❌ Assignments import failed: ${aj?.error || ar.status}`);
+          } catch (e) { banner(`❌ Assignments import error: ${e.message}`); }
           // Auto-sync and extract for all courses
           try {
             const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);

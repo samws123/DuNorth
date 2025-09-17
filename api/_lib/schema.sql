@@ -52,8 +52,13 @@ CREATE TABLE IF NOT EXISTS assignments (
   course_id BIGINT,
   name TEXT,
   due_at TIMESTAMPTZ,
+  description TEXT,
+  updated_at TIMESTAMPTZ,
   workflow_state TEXT,
   raw_json JSONB,
+  points_possible NUMERIC,
+  submission_types TEXT[],
+  html_url TEXT,
   PRIMARY KEY (user_id, id)
 );
 
