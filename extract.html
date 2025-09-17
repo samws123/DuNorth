@@ -13,12 +13,11 @@
       .btn { display: inline-block; padding: 8px 12px; background: #111827; color: #fff; border-radius: 6px; text-decoration: none; }
       .meta { font-size: 12px; color: #6b7280; margin-top: 8px; }
     </style>
-    <!-- PDF.js UMD for browsers (2.x for broad CDN support) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha512-k3aKXBzGQ4H3H+v9E4U9f5wV0G7m4Lw5Qz5v0w3p6jgFQJjGxJ+S7N+oZc1J2g5b5QhSltxN+Yx6oUqGWHo3BQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- PDF.js UMD for browsers -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-      // Point the worker to the same CDN version
-      if (window['pdfjsLib']) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       }
     </script>
   </head>
@@ -47,7 +46,9 @@
           const buf = await r.arrayBuffer();
           const u8 = new Uint8Array(buf);
           status.textContent = 'Extracting text in browser…';
-          const doc = await pdfjsLib.getDocument({ data: u8 }).promise;
+          const PDF = window.pdfjsLib;
+          if (!PDF) throw new Error('pdfjsLib failed to load');
+          const doc = await PDF.getDocument({ data: u8 }).promise;
           let text = '';
           for (let i = 1; i <= doc.numPages; i++) {
             const page = await doc.getPage(i);
