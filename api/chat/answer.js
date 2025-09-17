@@ -59,31 +59,23 @@ export default async function handler(req, res) {
   const userId = await resolveUserId(rawUserId);
   const m = message.toLowerCase();
 
-  if (m.includes('what') && m.includes('my') && m.includes('name')) {
-    // Try live Canvas first using stored cookie (proof that cookies work)
-    try {
-      const sess = await getLatestCanvasSession(userId);
-      if (sess?.base_url && sess?.session_cookie) {
-        const me = await fetchCanvasSelf(sess.base_url, sess.session_cookie);
-        if (me?.name) {
-          // sync back to DB for future fast answers
-          try { await query(`UPDATE users SET name = $1 WHERE id = $2`, [me.name, userId]); } catch {}
-          return res.status(200).json({ role: 'assistant', text: `Your name on Canvas is ${me.name}. (from Canvas)` });
-        }
-      }
-    } catch (_) { /* fall back below */ }
-
-    // Fallback: use stored canvas_name, then users.name
-    const r = await query(
-      `SELECT COALESCE(
-         (SELECT NULLIF(canvas_name,'') FROM user_canvas_sessions WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, created_at DESC LIMIT 1),
-         (SELECT NULLIF(name,'') FROM users WHERE id = $1)
-       ) AS name`,
-      [userId]
-    );
-    const name = r.rows[0]?.name || null;
-    if (name) return res.status(200).json({ role: 'assistant', text: `Your name on Canvas is ${name}.` });
-    return res.status(200).json({ role: 'assistant', text: 'I don\'t have your name yet. Click “Refresh Canvas”.' });
+  // Helper: parse optional course filter (numeric course id or fuzzy name/code at the end)
+  async function parseCourseFilter(text) {
+    const idMatch = text.match(/course\s*(?:id\s*)?(\d{3,})/) || text.match(/\bid\s*(\d{3,})\b/);
+    if (idMatch) {
+      const cid = Number(idMatch[1]);
+      if (Number.isFinite(cid)) return { courseId: cid };
+    }
+    const nameMatch = text.match(/(?:for|in)\s+(?:course|class)?\s*([a-z0-9 .\-]{3,})$/);
+    if (nameMatch && nameMatch[1]) {
+      const term = `%${nameMatch[1].trim()}%`;
+      const r = await query(
+        `SELECT id FROM courses WHERE user_id = $1 AND (name ILIKE $2 OR course_code ILIKE $2) ORDER BY name ASC LIMIT 1`,
+        [userId, term]
+      );
+      if (r.rows[0]?.id) return { courseId: r.rows[0].id };
+    }
+    return {};
   }
 
   if (m.includes('what') && m.includes('my') && (m.includes('class') || m.includes('course') || m.includes('courses') || m.includes('cours'))) {
@@ -98,23 +90,64 @@ export default async function handler(req, res) {
     return res.status(200).json({ role: 'assistant', text: `Your courses:\n\n${lines.join('\n')}` });
   }
 
-  if (m.includes('due') && (m.includes('week') || m.includes('today'))) {
+  // List assignments (optionally per course), no date filter
+  if (m.includes('assignment') && !m.includes('due')) {
+    const { courseId } = await parseCourseFilter(m);
+    const clauses = ["user_id = $1", "(workflow_state IS NULL OR workflow_state = 'published')"];
+    const params = [userId];
+    let p = 2;
+    if (courseId) { clauses.push(`course_id = $${p++}`); params.push(courseId); }
+    const sql = `SELECT name, due_at, course_id, html_url FROM assignments
+                 WHERE ${clauses.join(' AND ')}
+                 ORDER BY due_at NULLS LAST, updated_at DESC
+                 LIMIT 100`;
+    const { rows } = await query(sql, params);
+    if (rows.length === 0) {
+      return res.status(200).json({ role: 'assistant', text: courseId ? `No assignments stored yet for course ${courseId}.` : 'No assignments stored yet. Click “Refresh Canvas”.' });
+    }
+    const lines = rows.map((r, i) => `${i + 1}. ${r.name}${r.due_at ? ` — due ${new Date(r.due_at).toLocaleDateString()}` : ''}${r.html_url ? ` — ${r.html_url}` : ''}`);
+    return res.status(200).json({ role: 'assistant', text: `${courseId ? `Assignments for course ${courseId}` : 'Assignments'}:\n\n${lines.join('\n')}` });
+  }
+
+  // Assignments due: today/this week/on <date>/<weekday>/overdue; optional course filter
+  if (m.includes('assignment') && (m.includes('due') || m.includes('overdue') || m.includes('late') || m.includes('today') || m.includes('tomorrow') || m.includes('week') || m.includes('on '))) {
     const now = new Date();
-    const end = new Date(now.getTime() + (m.includes('today') ? 1 : 7) * 24 * 60 * 60 * 1000);
+    let start = null; let end = null; let timeframe = 'upcoming';
+    if (m.includes('today')) { const s = new Date(now.getFullYear(), now.getMonth(), now.getDate()); start = s; end = new Date(s.getTime() + 86400000); timeframe = 'today'; }
+    else if (m.includes('tomorrow')) { const s = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); start = s; end = new Date(s.getTime() + 86400000); timeframe = 'tomorrow'; }
+    else if (m.includes('week')) { const s = new Date(now.getFullYear(), now.getMonth(), now.getDate()); start = s; end = new Date(s.getTime() + 7*86400000); timeframe = 'this week'; }
+    else if (m.includes('overdue') || m.includes('late')) { start = null; end = now; timeframe = 'overdue'; }
+    const md = m.match(/on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+    const md2 = m.match(/on\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+    if (md) {
+      const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dowMap = { sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6 };
+      const target = dowMap[md[1]]; const cur = base.getDay();
+      let delta = (target - cur + 7) % 7; if (delta === 0) delta = 7;
+      start = new Date(base.getTime() + delta*86400000); end = new Date(start.getTime() + 86400000); timeframe = 'on that day';
+    } else if (md2) {
+      const yy = md2[3] ? parseInt(md2[3],10) : now.getFullYear();
+      const mm = parseInt(md2[1],10)-1; const dd = parseInt(md2[2],10);
+      start = new Date(yy,mm,dd); end = new Date(yy,mm,dd+1); timeframe = 'on that day';
+    }
+    const { courseId } = await parseCourseFilter(m);
+    const clauses = ["user_id = $1", "(workflow_state IS NULL OR workflow_state = 'published')"]; const params = [userId];
+    let p = 2;
+    if (courseId) { clauses.push(`course_id = $${p++}`); params.push(courseId); }
+    if (start && end) { clauses.push(`due_at >= $${p++} AND due_at < $${p++}`); params.push(start, end); }
+    else if (end && !start) { clauses.push(`due_at IS NOT NULL AND due_at < $${p++}`); params.push(end); }
+    else { clauses.push(`due_at IS NOT NULL AND due_at >= $${p++}`); params.push(now); timeframe = timeframe || 'upcoming'; }
     const { rows } = await query(
       `SELECT name, due_at, course_id FROM assignments
-       WHERE user_id = $1 AND workflow_state = 'published'
-         AND due_at BETWEEN $2 AND $3
+       WHERE ${clauses.join(' AND ')}
        ORDER BY due_at ASC
        LIMIT 50`,
-      [userId, now, end]
+      params
     );
-    
+
     if (openai && rows.length > 0) {
-      const timeframe = m.includes('today') ? 'today' : 'this week';
-      const assignmentList = rows.map(r => `${r.name} (due ${new Date(r.due_at).toLocaleDateString()})`).join('\n');
-      const prompt = `Format this assignment list for a student asking what's due ${timeframe}. Be helpful and organized:\n\n${assignmentList}`;
-      
+      const assignmentList = rows.map(r => `${r.name}${r.due_at ? ` (due ${new Date(r.due_at).toLocaleDateString()})` : ''}`).join('\n');
+      const prompt = `Format this assignment list ${courseId ? `for course ${courseId} ` : ''}${timeframe}. Be concise, bullet the items, include due dates if present.\n\n${assignmentList}`;
       const r2 = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
@@ -123,13 +156,12 @@ export default async function handler(req, res) {
       });
       return res.status(200).json({ role: 'assistant', text: r2.choices?.[0]?.message?.content || '' });
     }
-    
-    const timeframe = m.includes('today') ? 'today' : 'this week';
+
     if (rows.length === 0) {
-      return res.status(200).json({ role: 'assistant', text: `No assignments due ${timeframe}! 🎉` });
+      return res.status(200).json({ role: 'assistant', text: `No assignments ${timeframe}! 🎉` });
     }
-    const formatted = rows.map((r, i) => `${i + 1}. ${r.name} (due ${new Date(r.due_at).toLocaleDateString()})`).join('\n');
-    return res.status(200).json({ role: 'assistant', text: `Assignments due ${timeframe}:\n\n${formatted}` });
+    const formatted = rows.map((r, i) => `${i + 1}. ${r.name}${r.due_at ? ` (due ${new Date(r.due_at).toLocaleDateString()})` : ''}`).join('\n');
+    return res.status(200).json({ role: 'assistant', text: `Assignments ${timeframe}:\n\n${formatted}` });
   }
 
   if (openai) {

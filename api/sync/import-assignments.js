@@ -61,8 +61,8 @@ export default async function handler(req, res) {
         const items = await callPaged(baseUrl, cookie, path);
         for (const a of items) {
           await query(
-            `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, raw_json)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+            `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
              ON CONFLICT (user_id, id) DO UPDATE SET
                name = EXCLUDED.name,
                due_at = EXCLUDED.due_at,
@@ -71,6 +71,7 @@ export default async function handler(req, res) {
                points_possible = EXCLUDED.points_possible,
                submission_types = EXCLUDED.submission_types,
                html_url = EXCLUDED.html_url,
+               workflow_state = EXCLUDED.workflow_state,
                raw_json = EXCLUDED.raw_json`,
             [
               userId,
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
               a.points_possible || null,
               Array.isArray(a.submission_types) ? a.submission_types : (a.submission_types ? [a.submission_types] : []),
               a.html_url || null,
+              a.published === true ? 'published' : 'unpublished',
               a
             ]
           );
