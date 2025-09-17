@@ -1,7 +1,7 @@
-import path from 'node:path';
-
-const CMAPS_DIR = path.resolve(process.cwd(), 'node_modules/pdfjs-dist/cmaps');
-const STDFONTS_DIR = path.resolve(process.cwd(), 'node_modules/pdfjs-dist/standard_fonts');
+// Use CDN asset paths to avoid bundling cMaps/standard_fonts in serverless
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+const CMAPS_DIR = `${PDFJS_CDN}/cmaps`;
+const STDFONTS_DIR = `${PDFJS_CDN}/standard_fonts`;
 
 export async function extractPdfTextFromBuffer(buffer) {
   // Try pdf-parse first (if available), then pdfjs-dist
