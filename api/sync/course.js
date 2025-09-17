@@ -24,6 +24,8 @@ async function callCanvasPaged(baseUrl, cookieValue, path) {
     }
     if (!resp?.ok) {
       const txt = await resp.text().catch(()=> '');
+      // Treat disabled pages (404 with specific message) as empty result
+      if (resp.status === 404 && /disabled for this course/i.test(txt)) return [];
       throw new Error(`Canvas error ${resp?.status}: ${txt.slice(0,300)}`);
     }
     const data = await resp.json();
