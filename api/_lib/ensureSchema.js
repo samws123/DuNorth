@@ -33,6 +33,7 @@ export async function ensureSchema() {
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS workflow_state TEXT;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS points_possible NUMERIC;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS submission_types TEXT[];
+    ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
   `;
   try { await query(safetySql, []); } catch (_) {}
 
