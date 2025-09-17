@@ -135,13 +135,35 @@ refreshBtn.addEventListener('click', async () => {
                 }
               } catch(e) { banner(`❌ Extract ${c.id} error: ${e.message}`); }
             }
-            // Trigger client-side extractor in a hidden iframe (uses pdf.js in browser)
+            // Client-side fallback: sequentially extract PDFs with missing text
             try {
-              const ifr = document.createElement('iframe');
-              ifr.style.width = '0'; ifr.style.height = '0'; ifr.style.border = '0'; ifr.style.position = 'absolute'; ifr.style.left = '-9999px';
-              ifr.src = `/extract-course.html?courseId=20031&silent=1`;
-              document.body.appendChild(ifr);
-              banner('🧠 Client extract started for course 20031');
+              async function runClientPdfExtractQueue(courseId) {
+                banner(`🧩 Client PDF fallback: scanning course ${courseId}…`);
+                const fl = await fetch(`/api/debug/files-db?courseId=${courseId}`).then(r=>r.json()).catch(()=>null);
+                const files = Array.isArray(fl?.files) ? fl.files : [];
+                const pending = files.filter(f => String(f.filename||'').toLowerCase().endsWith('.pdf') && (!f.text_len || Number(f.text_len) === 0)).map(f=>f.id);
+                if (!pending.length) { banner('🧩 No PDFs need fallback.'); return; }
+                const ifr = document.createElement('iframe');
+                ifr.style.width='0'; ifr.style.height='0'; ifr.style.border='0'; ifr.style.position='absolute'; ifr.style.left='-9999px';
+                document.body.appendChild(ifr);
+                for (const id of pending) {
+                  banner(`📄 Fallback extracting PDF ${id}…`);
+                  try {
+                    ifr.src = `/extract.html?fileId=${id}`;
+                    // poll until stored
+                    let ok=false; const start=Date.now();
+                    while (!ok && Date.now()-start < 45000) {
+                      await new Promise(r=>setTimeout(r, 2000));
+                      const resp = await fetch(`/api/debug/file-text-raw?fileId=${id}`);
+                      if (resp.status === 200) { ok = true; break; }
+                    }
+                    banner(ok ? `✅ Stored text for ${id}` : `⚠️ Timeout storing text for ${id}`);
+                  } catch (e) { banner(`❌ Fallback error for ${id}: ${e.message}`); }
+                }
+                document.body.removeChild(ifr);
+                banner('🧩 Client PDF fallback complete.');
+              }
+              await runClientPdfExtractQueue(20031);
             } catch (_) {}
           } catch (e) {
             banner(`⚠️ Could not auto-extract for all courses: ${e.message}`);
