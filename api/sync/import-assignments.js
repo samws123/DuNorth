@@ -50,10 +50,58 @@ export default async function handler(req, res) {
     if (!s.rows[0]) return res.status(404).json({ error: 'No stored session' });
     const baseUrl = s.rows[0].base_url; const cookie = s.rows[0].session_cookie;
 
-    // Courses
+    // Courses (for later fallback)
     const c = await query(`SELECT id FROM courses WHERE user_id = $1 LIMIT 1000`, [userId]);
+
     let imported = 0; const details = [];
 
+    // 1) Fast path: Planner items (captures upcoming assignments quickly)
+    try {
+      const now = new Date();
+      const startISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      const endISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120).toISOString();
+      const planner = await callPaged(baseUrl, cookie, `/api/v1/planner/items?per_page=100&start_date=${encodeURIComponent(startISO)}&end_date=${encodeURIComponent(endISO)}`);
+      for (const it of planner) {
+        if (!it || String(it.plannable_type).toLowerCase() !== 'assignment') continue;
+        const a = it.plannable || {};
+        const cid = it.course_id || it.context_code?.replace('course_', '') || null;
+        if (!a.id || !cid) continue;
+        await query(
+          `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+           ON CONFLICT (user_id, id) DO UPDATE SET
+             name = EXCLUDED.name,
+             due_at = EXCLUDED.due_at,
+             description = EXCLUDED.description,
+             updated_at = EXCLUDED.updated_at,
+             points_possible = EXCLUDED.points_possible,
+             submission_types = EXCLUDED.submission_types,
+             html_url = EXCLUDED.html_url,
+             workflow_state = EXCLUDED.workflow_state,
+             raw_json = EXCLUDED.raw_json`,
+          [
+            userId,
+            a.id,
+            Number(cid),
+            a.name || it.title || null,
+            (a.due_at || it.plannable_date) ? new Date(a.due_at || it.plannable_date) : null,
+            a.description || it.details || null,
+            a.updated_at ? new Date(a.updated_at) : null,
+            a.points_possible || null,
+            Array.isArray(a.submission_types) ? a.submission_types : (a.submission_types ? [a.submission_types] : []),
+            a.html_url || it.html_url || null,
+            a.published === true ? 'published' : 'unpublished',
+            it
+          ]
+        );
+        imported++;
+      }
+      details.push({ source: 'planner', count: imported });
+    } catch (e) {
+      details.push({ source: 'planner', error: String(e.message || e) });
+    }
+
+    // 2) Per-course assignments (authoritative)
     for (const row of c.rows) {
       const cid = row.id;
       try {
