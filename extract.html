@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Client PDF Extractor</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+      h1 { font-size: 18px; margin: 0 0 12px; }
+      .log { white-space: pre-wrap; background: #f6f8fa; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; min-height: 120px; }
+      .ok { color: #0a7a0a; }
+      .err { color: #b00020; }
+      .btn { display: inline-block; padding: 8px 12px; background: #111827; color: #fff; border-radius: 6px; text-decoration: none; }
+      .meta { font-size: 12px; color: #6b7280; margin-top: 8px; }
+    </style>
+    <!-- PDF.js UMD for browsers (2.x for broad CDN support) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha512-k3aKXBzGQ4H3H+v9E4U9f5wV0G7m4Lw5Qz5v0w3p6jgFQJjGxJ+S7N+oZc1J2g5b5QhSltxN+Yx6oUqGWHo3BQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      // Point the worker to the same CDN version
+      if (window['pdfjsLib']) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Client-side PDF Text Extractor</h1>
+    <div id="status" class="meta">Ready</div>
+    <div id="out" class="log"></div>
+    <script>
+      (async () => {
+        const q = new URLSearchParams(location.search);
+        const fileId = q.get('fileId');
+        const out = document.getElementById('out');
+        const status = document.getElementById('status');
+        function log(msg){ out.textContent += msg + '\n'; }
+        if (!fileId) { status.textContent = 'Missing ?fileId='; return; }
+        try {
+          status.textContent = 'Fetching file metadata…';
+          const metaR = await fetch(`/api/debug/file-meta?fileId=${encodeURIComponent(fileId)}`);
+          const meta = await metaR.json();
+          if (!metaR.ok || !meta?.ok) throw new Error(meta?.error || 'file_meta_error');
+          const url = meta.file?.public_download_url;
+          if (!url) throw new Error('no public_download_url');
+          status.textContent = 'Downloading PDF bytes…';
+          const r = await fetch(url, { mode: 'cors' });
+          if (!r.ok) throw new Error('download_failed ' + r.status);
+          const buf = await r.arrayBuffer();
+          const u8 = new Uint8Array(buf);
+          status.textContent = 'Extracting text in browser…';
+          const doc = await pdfjsLib.getDocument({ data: u8 }).promise;
+          let text = '';
+          for (let i = 1; i <= doc.numPages; i++) {
+            const page = await doc.getPage(i);
+            const tc = await page.getTextContent({ disableCombineTextItems: false });
+            const t = tc.items.map(it => it && it.str ? it.str : '').join(' ');
+            if (t) text += t + '\n';
+          }
+          text = text.trim();
+          if (!text) throw new Error('no_text_extracted_client');
+          status.textContent = 'Uploading extracted text…';
+          const storeR = await fetch('/api/debug/store-text', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileId: Number(fileId), text })
+          });
+          const storeJ = await storeR.json().catch(()=>({}));
+          if (!storeR.ok || !storeJ?.ok) throw new Error('store_failed');
+          status.innerHTML = '<span class="ok">Done</span>'; log(text.slice(0, 2000) || '[empty]');
+        } catch (e) {
+          status.innerHTML = '<span class="err">Error</span>'; log(String(e.message || e));
+        }
+      })();
+    </script>
+  </body>
+  </html>
+
+
