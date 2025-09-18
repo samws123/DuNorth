@@ -34,6 +34,8 @@ export async function ensureSchema() {
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS points_possible NUMERIC;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS submission_types TEXT[];
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS google_sub TEXT;
+    CREATE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub);
   `;
   try { await query(safetySql, []); } catch (_) {}
 

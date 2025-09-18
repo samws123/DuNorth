@@ -4,7 +4,8 @@ const linkSignin = document.getElementById('link-signin');
 const googleBtn = document.getElementById('btn-google');
 
 googleBtn.addEventListener('click', () => {
-  alert('Google SSO coming soon.');
+  const url = `/api/auth/google-start?callbackUrl=${encodeURIComponent('/schools/school.html')}`;
+  window.location.href = url;
 });
 
 linkSignin.addEventListener('click', (e) => {
