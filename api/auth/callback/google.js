@@ -1,5 +1,5 @@
-import { ensureSchema } from '../_lib/ensureSchema.js';
-import { query } from '../_lib/pg.js';
+import { ensureSchema } from '../../_lib/ensureSchema.js';
+import { query } from '../../_lib/pg.js';
 
 async function exchangeCodeForTokens(code, redirectUri) {
   const params = new URLSearchParams();
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     await ensureSchema();
     const base = (process.env.NEXTAUTH_URL || (req.headers.origin ? req.headers.origin : '')).replace(/\/$/, '');
     if (!base) throw new Error('missing_base');
-    const redirectUri = `${base}/api/auth/google-callback`;
+    const redirectUri = `${base}/api/auth/callback/google`;
 
     const { code, state } = req.query || {};
     if (!code) return res.status(400).send('Missing code');
