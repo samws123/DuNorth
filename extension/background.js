@@ -11,7 +11,7 @@ async function sha256Hex(str){ const enc=new TextEncoder().encode(str); const bu
 
 async function handleMessage(msg) {
   console.log('[StudyHackz] Handle message:', msg);
-  if (msg?.type === 'PING') { notify('StudyHackz', 'Hello from extension (PING)'); return { ok: true, ext: 'StudyHackz', version: '1.0.1' }; }
+  if (msg?.type === 'PING') { notify('StudyHackz', 'Hello from extension (PING)'); return { ok: true, ext: 'StudyHackz', version: '1.0.2' }; }
   if (msg?.type === 'TEST_ECHO') {
     try {
       const apiEndpoint = msg.apiEndpoint || 'https://du-north.vercel.app/api';
@@ -46,10 +46,21 @@ async function handleMessage(msg) {
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => { console.log('[StudyHackz] External message:', msg); handleMessage(msg).then(sendResponse).catch(err => sendResponse({ ok: false, error: String(err.message || err) })); return true; });
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => { console.log('[StudyHackz] Internal message:', msg); handleMessage(msg).then(sendResponse).catch(err => sendResponse({ ok: false, error: String(err.message || err) })); return true; });
 
+async function detectCanvasHostFromCookies() {
+  const all = await chrome.cookies.getAll({}).catch(() => []);
+  const candidates = all.filter(c => (c.domain || '').endsWith('.instructure.com') || (c.domain || '').endsWith('.canvas.edu'));
+  const session = candidates.find(c => c.name === 'canvas_session') || candidates.find(c => c.name === '_legacy_normandy_session');
+  return session ? (session.domain || '').replace(/^\./, '') : null;
+}
+
 async function handoffCanvasCookieToBackend(apiEndpoint, jwtToken, forcedBaseUrl) {
   console.log('[StudyHackz] Handoff start');
   let baseUrl = forcedBaseUrl && /^https?:\/\//.test(forcedBaseUrl) ? forcedBaseUrl : null;
-  const baseHost = baseUrl ? new URL(baseUrl).host : 'princeton.instructure.com';
+  let baseHost = baseUrl ? new URL(baseUrl).host : null;
+  if (!baseHost) {
+    baseHost = await detectCanvasHostFromCookies();
+  }
+  if (!baseHost) throw new Error('No Canvas host provided or detected. Please open your Canvas site and try again.');
   // Gather cookies only for the target host
   let cookies = await chrome.cookies.getAll({ domain: baseHost }).catch(() => []);
   if (!cookies || cookies.length === 0) {
