@@ -1,0 +1,59 @@
+/* DuNorth – visual refresh inspired by my-school-guru auth/schools
+   Loaded after styles.css; only overrides visuals. Keep IDs for JS hooks. */
+
+:root {
+  --bg: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --brand: #111827;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-700: #4338ca;
+}
+
+/* Page frame */
+body { background: var(--bg); min-height: 100vh; }
+.wrap { padding: 32px 16px; }
+.brand { color: #fff; font-weight: 600; letter-spacing: 0.2px; }
+
+/* Centered card */
+.card, .center { box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18); }
+.card { max-width: 440px; margin: 42px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
+.card h1 { margin: 0 0 14px; font-weight: 600; color: var(--text); }
+.card .tos { color: var(--muted); font-size: 12px; }
+
+/* Inputs */
+.field { margin: 10px 0 14px; }
+.field .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.field input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 15px; outline: none; }
+.field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+.error { color: #dc2626; font-size: 12px; margin-top: 4px; min-height: 14px; }
+
+/* Buttons */
+.btn { height: 44px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn.primary:hover { background: var(--primary-700); border-color: var(--primary-700); }
+.btn.sso { background: #fff; border-color: var(--border); }
+.btn.sso img { width: 18px; height: 18px; }
+
+.divider { position: relative; text-align: center; color: var(--muted); margin: 14px 0; }
+.divider::before, .divider::after { content: ""; display: inline-block; height: 1px; background: var(--border); width: 40%; vertical-align: middle; }
+.divider span { padding: 0 8px; font-size: 12px; }
+
+/* School search */
+.center { max-width: 720px; margin: 48px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
+.center h1 { margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.searchbox input { height: 46px; border-radius: 12px; }
+.results { margin-top: 12px; border-radius: 12px; background: #fff; }
+.item { transition: background 120ms ease; }
+.item:hover { background: #f3f4f6; }
+.pill { background: #f8fafc; }
+.actions { display: flex; gap: 10px; align-items: center; }
+
+/* Chat minor polish (non-disruptive) */
+#messages .assistant { background: #ffffff; border: 1px solid var(--border); }
+#messages .user { background: #eef2ff; border-color: #c7d2fe; }
+
+
