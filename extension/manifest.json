@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "StudyHackz",
+  "version": "1.0.1",
+  "description": "Canvas integration for DuNorth",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": { "default_title": "StudyHackz" },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "cookies",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://*.instructure.com/*",
+    "https://*.canvas.edu/*",
+    "https://files.instructure.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.instructure.com/*",
+        "https://*.canvas.edu/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://du-north.vercel.app/*",
+        "https://*.vercel.app/*",
+        "https://localhost:3000/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://du-north.vercel.app/*",
+      "https://*.vercel.app/*",
+      "https://localhost:3000/*"
+    ]
+  }
+}
