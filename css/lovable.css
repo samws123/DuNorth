@@ -2,37 +2,38 @@
    Loaded after styles.css; only overrides visuals. Keep IDs for JS hooks. */
 
 :root {
-  --bg: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  --bg: radial-gradient(1200px 600px at 50% 0%, #fbf7ef 0%, #faf6ee 40%, #f7f2e9 70%, #f5efe6 100%);
   --card: #ffffff;
-  --border: #e5e7eb;
-  --text: #0f172a;
+  --border: #eae6df;
+  --text: #102a43;
   --muted: #6b7280;
-  --brand: #111827;
-  --primary: #4f46e5; /* indigo-600 */
-  --primary-700: #4338ca;
+  --brand: #0f172a;
+  --primary: #8db4f2; /* soft blue */
+  --primary-700: #7aa4e8;
 }
 
 /* Page frame */
 body { background: var(--bg); min-height: 100vh; }
 .wrap { padding: 32px 16px; }
-.brand { color: #fff; font-weight: 600; letter-spacing: 0.2px; }
+.brand { color: var(--brand); font-weight: 700; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 8px; }
+.brand::before { content: "↗"; font-size: 16px; }
 
 /* Centered card */
-.card, .center { box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18); }
-.card { max-width: 440px; margin: 42px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
-.card h1 { margin: 0 0 14px; font-weight: 600; color: var(--text); }
+.card, .center { box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06); }
+.card { max-width: 480px; margin: 42px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
+.card h1 { margin: 0 0 14px; font-weight: 700; color: var(--text); }
 .card .tos { color: var(--muted); font-size: 12px; }
 
 /* Inputs */
 .field { margin: 10px 0 14px; }
 .field .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-.field input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 15px; outline: none; }
-.field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+.field input { width: 100%; height: 46px; border: 1px solid var(--border); border-radius: 999px; padding: 0 14px; font-size: 15px; outline: none; background: #fbfaf7; }
+.field input:focus { border-color: #d7d1c7; box-shadow: 0 0 0 3px rgba(141,180,242,.25); background: #fff; }
 .error { color: #dc2626; font-size: 12px; margin-top: 4px; min-height: 14px; }
 
 /* Buttons */
-.btn { height: 44px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn { height: 46px; border-radius: 999px; border: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.btn.primary { background: var(--primary); color: #0f172a; border-color: var(--primary); }
 .btn.primary:hover { background: var(--primary-700); border-color: var(--primary-700); }
 .btn.sso { background: #fff; border-color: var(--border); }
 .btn.sso img { width: 18px; height: 18px; }
@@ -42,15 +43,17 @@ body { background: var(--bg); min-height: 100vh; }
 .divider span { padding: 0 8px; font-size: 12px; }
 
 /* School search */
-.center { max-width: 720px; margin: 48px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
-.center h1 { margin: 0 0 8px; }
+.center { max-width: 560px; margin: 64px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
+.center h1 { margin: 0 0 8px; font-weight: 800; color: var(--text); }
 .muted { color: var(--muted); }
-.searchbox input { height: 46px; border-radius: 12px; }
-.results { margin-top: 12px; border-radius: 12px; background: #fff; }
-.item { transition: background 120ms ease; }
-.item:hover { background: #f3f4f6; }
-.pill { background: #f8fafc; }
+.searchbox input { height: 46px; border-radius: 999px; }
+.results { margin-top: 12px; border-radius: 12px; background: #fff; border: 1px solid var(--border); }
+.item { padding: 12px 14px; transition: background 120ms ease; display: flex; align-items: center; justify-content: space-between; }
+.item:hover { background: #f7f2ea; }
+.pill { background: #f1f5f9; }
 .actions { display: flex; gap: 10px; align-items: center; }
+.footer-note { text-align: center; margin-top: 16px; color: var(--text); }
+.footer-note a { color: #3b82f6; text-decoration: underline; }
 
 /* Chat minor polish (non-disruptive) */
 #messages .assistant { background: #ffffff; border: 1px solid var(--border); }
