@@ -2,21 +2,22 @@
    Loaded after styles.css; only overrides visuals. Keep IDs for JS hooks. */
 
 :root {
-  --bg: radial-gradient(1200px 600px at 50% 0%, #fbf7ef 0%, #faf6ee 40%, #f7f2e9 70%, #f5efe6 100%);
+  --bg: radial-gradient(1200px 600px at 50% 0%, #fff1f5 0%, #fbf7ef 30%, #faf6ee 55%, #f7f2e9 75%, #f5efe6 100%);
   --card: #ffffff;
   --border: #eae6df;
   --text: #102a43;
   --muted: #6b7280;
   --brand: #0f172a;
-  --primary: #8db4f2; /* soft blue */
-  --primary-700: #7aa4e8;
+  /* Soft pink accents */
+  --primary: #f472b6; /* pink-400 */
+  --primary-700: #ec4899; /* pink-500 */
 }
 
 /* Page frame */
 body { background: var(--bg); min-height: 100vh; }
 .wrap { padding: 32px 16px; }
 .brand { color: var(--brand); font-weight: 700; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; width: 100%; margin: 8px 0 16px; }
-.brand::before { content: "↗"; font-size: 16px; }
+.brand::before { content: "↗"; font-size: 16px; color: var(--primary-700); }
 
 /* Centered card */
 .card, .center { box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06); }
@@ -28,7 +29,7 @@ body { background: var(--bg); min-height: 100vh; }
 .field { margin: 10px 0 14px; }
 .field .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .field input { width: 100%; height: 46px; border: 1px solid var(--border); border-radius: 999px; padding: 0 14px; font-size: 15px; outline: none; background: #fbfaf7; box-shadow: inset 0 1px 0 rgba(0,0,0,0.02); }
-.field input:focus { border-color: #d7d1c7; box-shadow: 0 0 0 3px rgba(141,180,242,.25), inset 0 1px 0 rgba(0,0,0,0.02); background: #fff; }
+.field input:focus { border-color: #fbcfe8; box-shadow: 0 0 0 3px rgba(244,114,182,.25), inset 0 1px 0 rgba(0,0,0,0.02); background: #fff; }
 .error { color: #dc2626; font-size: 12px; margin-top: 4px; min-height: 14px; }
 
 /* Buttons */
@@ -40,7 +41,7 @@ body { background: var(--bg); min-height: 100vh; }
 
 .divider { position: relative; text-align: center; color: var(--muted); margin: 14px 0; }
 .divider::before, .divider::after { content: ""; display: inline-block; height: 1px; background: var(--border); width: 40%; vertical-align: middle; }
-.divider span { padding: 0 8px; font-size: 12px; }
+.divider span { padding: 0 8px; font-size: 12px; color: var(--primary-700); }
 
 /* School search */
 .center { max-width: 560px; margin: 64px auto; border-radius: 16px; padding: 28px; background: var(--card); border: 1px solid var(--border); }
@@ -49,14 +50,14 @@ body { background: var(--bg); min-height: 100vh; }
 .searchbox input { height: 46px; border-radius: 999px; }
 .results { margin-top: 12px; border-radius: 12px; background: #fff; border: 1px solid var(--border); }
 .item { padding: 12px 14px; transition: background 120ms ease; display: flex; align-items: center; justify-content: space-between; }
-.item:hover { background: #f7f2ea; }
-.pill { background: #f1f5f9; }
+.item:hover { background: #fdf2f8; }
+.pill { background: #fce7f3; }
 .actions { display: flex; gap: 10px; align-items: center; justify-content: center; }
 .footer-note { text-align: center; margin-top: 16px; color: var(--text); }
-.footer-note a { color: #3b82f6; text-decoration: underline; }
+.footer-note a { color: var(--primary-700); text-decoration: underline; }
 
 /* Chat minor polish (non-disruptive) */
 #messages .assistant { background: #ffffff; border: 1px solid var(--border); }
-#messages .user { background: #eef2ff; border-color: #c7d2fe; }
+#messages .user { background: #fdf2f8; border-color: #fbcfe8; }
 
 
