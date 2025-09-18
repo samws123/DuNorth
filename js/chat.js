@@ -26,6 +26,14 @@ function bridgeCall(type, payload, timeoutMs = 8000) {
   });
 }
 
+async function getSavedBaseUrl(userId){
+  try {
+    const r = await fetch(`/api/user/base-url?userId=${encodeURIComponent(userId)}`);
+    const j = await r.json();
+    return j?.baseUrl || 'https://princeton.instructure.com';
+  } catch { return 'https://princeton.instructure.com'; }
+}
+
 refreshBtn.addEventListener('click', async () => {
   const userId = localStorage.getItem('dunorth_user') || 'demo-user';
   refreshBtn.disabled = true;
@@ -84,18 +92,21 @@ refreshBtn.addEventListener('click', async () => {
     const tokenResponse = await fetch('/api/auth/token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
     const { token } = await tokenResponse.json();
 
+    // Resolve baseUrl from user profile (or fallback)
+    const baseUrl = await getSavedBaseUrl(userId);
+
     let res;
     try {
       res = await new Promise((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('timeout')), 8000);
-        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl: 'https://princeton.instructure.com' }, (r) => {
+        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl }, (r) => {
           clearTimeout(t);
           if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
           resolve(r);
         });
       });
     } catch {
-      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl: 'https://princeton.instructure.com' });
+      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl });
     }
 
     if (res?.ok) {

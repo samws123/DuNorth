@@ -67,13 +67,20 @@ qEl.addEventListener('input', () => {
 
 contBtn.addEventListener('click', async () => {
   if (!selected) return;
-  // Persist locally (replace with backend call later)
+  // Persist locally and to backend
   localStorage.setItem('dunorth_school', JSON.stringify({
     name: selected.name,
     lms: selected.lms,
     baseUrl: selected.baseUrl,
     updatedAt: Date.now()
   }));
+  try {
+    const userId = localStorage.getItem('dunorth_user');
+    await fetch('/api/user/select-school', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, baseUrl: selected.baseUrl, lms: selected.lms, schoolName: selected.name })
+    });
+  } catch {}
   // Go to trial screen; chat will handle extension connection
   window.location.href = '../onboarding/trial.html';
 });
