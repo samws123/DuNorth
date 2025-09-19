@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>DuNorth Chat</title>
+  <link rel="stylesheet" href="/anara/css/chunks-f04ee3c20bb546a2.css">
+  <link rel="stylesheet" href="/anara/css/chunks-dbbc8a7f47208fae.css">
+  <link rel="stylesheet" href="/anara/css/chunks-0618359e749ce873.css">
+  <link rel="stylesheet" href="/anara/css/chunks-b9b8fd576cd40e28.css">
+  <link rel="stylesheet" href="/anara/css/chunks-b48ddba2e0e6c0bf.css">
+  <style>
+    body{background:#fff}
+    .chat-container{max-width:960px;margin:120px auto 40px;padding:0 16px}
+    .messages{display:flex;flex-direction:column;gap:12px}
+    .msg{white-space:pre-wrap;line-height:1.5;border:1px solid #eee;border-radius:16px;padding:12px 14px}
+    .msg.user{background:#000;color:#fff;border-color:#000;align-self:flex-end}
+    .msg.assistant{background:#f7f7f7;color:#151515}
+    .composer{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:12px 0;margin-top:16px}
+    .row{display:flex;gap:10px}
+    textarea{flex:1;resize:vertical;min-height:52px;max-height:240px;border:1px solid #e5e5e5;border-radius:12px;padding:12px;font:inherit}
+    button.primary{background:#000;color:#fff;border:none;border-radius:24px;padding:0 18px;height:44px}
+    button.secondary{background:#f5f5f5;border:none;border-radius:24px;padding:0 14px;height:44px}
+    header.site{position:fixed;top:0;left:0;right:0;height:72px;backdrop-filter:saturate(150%) blur(8px);background:rgba(255,255,255,.9);border-bottom:1px solid #f0f0f0}
+    header .wrap{max-width:1280px;margin:0 auto;height:100%;display:flex;align-items:center;padding:0 24px;gap:20px}
+    nav a, nav button{font-size:14px}
+    .spacer{flex:1}
+    .logo{height:24px}
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a href="/" aria-label="Home"><img class="logo" src="/anara/images/logo-dark.svg" alt="Logo"></a>
+      <nav class="hidden md:flex items-center space-x-[6px]">
+        <a class="p-3 px-4" href="#">Use cases</a>
+        <a class="p-3 px-4" href="#">Resources</a>
+        <a class="p-3 px-4" href="#pricing">Pricing</a>
+      </nav>
+      <div class="spacer"></div>
+      <button class="secondary">Log in</button>
+      <button class="primary">Get DuNorth free</button>
+    </div>
+  </header>
+
+  <main class="chat-container">
+    <div id="empty" class="messages"></div>
+    <div id="messages" class="messages"></div>
+    <div class="composer">
+      <div class="row">
+        <textarea id="input" placeholder="Message DuNorth…"></textarea>
+        <button id="send" class="primary">Send</button>
+        <button id="refresh" class="secondary">Refresh Canvas</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/chat.js" defer></script>
+  <script>
+    // seed demo user if not set
+    if (!localStorage.getItem('dunorth_user')) {
+      localStorage.setItem('dunorth_user', 'demo-user');
+    }
+  </script>
+</body>
+</html>
