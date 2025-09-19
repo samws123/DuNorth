@@ -6,46 +6,55 @@
     <title>DuNorth – Install Extension</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="stylesheet" href="../css/lovable.css" />
     <style>
-      .wrap2 { max-width: 760px; margin: 60px auto; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: 0 10px 24px rgba(2,6,23,.06); }
-      .muted { color: var(--muted); }
-      .row { display:flex; gap:12px; justify-content:center; }
-      .center { text-align:center; }
-      .hint { margin-top:8px; font-size:14px; }
-      .link-blue { color: var(--primary-700); text-decoration: underline; }
+      .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+      .stack { text-align: center; }
+      .big-cta { height: 64px; padding: 0 32px; border-radius: 999px; min-width: 360px; font-size: 16px; font-weight: 700; }
+      .foot { margin-top: 14px; font-size: 13px; color: var(--muted); }
     </style>
   </head>
   <body>
     <div class="wrap">
       <header class="brand">DuNorth</header>
-      <main class="wrap2">
-        <h1 class="center">Add the DuNorth Chrome Extension</h1>
-        <p class="muted center">This connects your Canvas login to DuNorth. You can remove it anytime.</p>
-        <div class="row" style="margin: 20px 0 10px;">
-          <a id="goInstall" class="btn primary" href="https://chromewebstore.google.com/detail/lectureping/lhfclolcgndpomhfdijbocgcbjhfjkah" target="_blank" rel="noopener">Go install extension</a>
-          <button id="installed" class="btn">I installed it</button>
+      <main class="screen">
+        <div class="stack">
+          <button id="goInstall" class="btn primary big-cta">Add the extension to Chrome</button>
+          <div class="foot">**This is a helper extension, but mandatory for us to function.</div>
         </div>
-        <p class="muted center hint">It opens the Chrome Web Store in a new tab. After installing, return here and click “I installed it”.<br/>Having trouble? <a class="link-blue" href="/privacypolicy" target="_blank" rel="noopener">See privacy</a>.</p>
       </main>
     </div>
+
     <script>
-      function detectExtension(timeout = 600){
+      // Open Web Store in new tab
+      document.getElementById('goInstall').addEventListener('click', () => {
+        window.open('https://chromewebstore.google.com/detail/lectureping/lhfclolcgndpomhfdijbocgcbjhfjkah', '_blank', 'noopener');
+      });
+
+      // Bridge helper for silent detection after user returns
+      function bridgeCall(type, payload, timeoutMs = 800){
         return new Promise((resolve) => {
-          let done = false;
-          function onMsg(ev){ if (ev?.data?.dunorth_ext === 'pong'){ done = true; cleanup(); resolve(true); } }
-          function cleanup(){ window.removeEventListener('message', onMsg); }
+          const reqId = Math.random().toString(36).slice(2);
+          const timer = setTimeout(() => { cleanup(); resolve({ ok:false, error:'timeout' }); }, timeoutMs);
+          function onMsg(e){ const d = e.data && e.data.__SHX_RES; if (!d || d.reqId !== reqId) return; cleanup(); resolve(d); }
+          function cleanup(){ clearTimeout(timer); window.removeEventListener('message', onMsg); }
           window.addEventListener('message', onMsg);
-          window.postMessage({ dunorth_page: 'ping' }, '*');
-          setTimeout(() => { if (!done){ cleanup(); resolve(false); } }, timeout);
+          window.postMessage({ __SHX: { type, payload, reqId } }, '*');
         });
       }
-      document.getElementById('installed').addEventListener('click', () => {
-        window.location.href = '../chat/chat.html?connected=1';
-      });
-      (async () => { const ok = await detectExtension(900); if (ok) window.location.href = '../chat/chat.html?connected=1'; })();
+
+      async function checkInstalled(){ try { const r = await bridgeCall('PING', {}, 900); return !!(r && r.ok); } catch { return false; } }
+
+      // Auto-redirect to chat once the extension is detected (user returns from store)
+      (async () => {
+        for (let i = 0; i < 12; i++) { // ~12s passive check
+          const ok = await checkInstalled();
+          if (ok) { window.location.href = '../chat/chat.html?connected=1'; return; }
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      })();
     </script>
   </body>
   </html>
