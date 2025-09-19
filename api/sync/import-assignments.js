@@ -165,7 +165,8 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ ok: true, processed, insertedNew, updatedExisting, uniqueAssignmentsThisRun: seenThisRun.size, details });
+    // 'imported' kept for backward compatibility with older frontends
+    return res.status(200).json({ ok: true, processed, insertedNew, updatedExisting, uniqueAssignmentsThisRun: seenThisRun.size, imported: seenThisRun.size, details });
   } catch (e) {
     return res.status(500).json({ error: 'internal_error', detail: String(e.message || e) });
   }
