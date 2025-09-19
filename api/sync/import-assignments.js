@@ -53,7 +53,12 @@ export default async function handler(req, res) {
     // Courses (for later fallback)
     const c = await query(`SELECT id FROM courses WHERE user_id = $1 LIMIT 1000`, [userId]);
 
-    let imported = 0; const details = [];
+    let processed = 0; let insertedNew = 0; let updatedExisting = 0; const details = [];
+    // Preload existing ids to distinguish new vs update
+    const existing = await query(`SELECT id FROM assignments WHERE user_id = $1`, [userId]);
+    const existingIds = new Set(existing.rows.map(r => Number(r.id)));
+    // Track IDs seen in this run to avoid double-counting planner vs per-course
+    const seenThisRun = new Set();
 
     // 1) Fast path: Planner items (captures upcoming assignments quickly)
     try {
@@ -61,11 +66,13 @@ export default async function handler(req, res) {
       const startISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
       const endISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120).toISOString();
       const planner = await callPaged(baseUrl, cookie, `/api/v1/planner/items?per_page=100&start_date=${encodeURIComponent(startISO)}&end_date=${encodeURIComponent(endISO)}`);
+      let plannerProcessed = 0;
       for (const it of planner) {
         if (!it || String(it.plannable_type).toLowerCase() !== 'assignment') continue;
         const a = it.plannable || {};
         const cid = it.course_id || it.context_code?.replace('course_', '') || null;
         if (!a.id || !cid) continue;
+        const aid = Number(a.id);
         await query(
           `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
@@ -94,9 +101,15 @@ export default async function handler(req, res) {
             it
           ]
         );
-        imported++;
+        if (!seenThisRun.has(aid)) {
+          processed++;
+          plannerProcessed++;
+          if (!existingIds.has(aid)) insertedNew++; else updatedExisting++;
+          seenThisRun.add(aid);
+          existingIds.add(aid);
+        }
       }
-      details.push({ source: 'planner', count: imported });
+      details.push({ source: 'planner', count: plannerProcessed });
     } catch (e) {
       details.push({ source: 'planner', error: String(e.message || e) });
     }
@@ -107,6 +120,7 @@ export default async function handler(req, res) {
       try {
         const path = `/api/v1/courses/${cid}/assignments?per_page=100&include[]=all_dates&include[]=submission_types&include[]=rubric`;
         const items = await callPaged(baseUrl, cookie, path);
+        let perCourseProcessed = 0;
         for (const a of items) {
           await query(
             `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
@@ -136,15 +150,22 @@ export default async function handler(req, res) {
               a
             ]
           );
-          imported++;
+          const aid = Number(a.id);
+          if (!seenThisRun.has(aid)) {
+            processed++;
+            perCourseProcessed++;
+            if (!existingIds.has(aid)) insertedNew++; else updatedExisting++;
+            seenThisRun.add(aid);
+            existingIds.add(aid);
+          }
         }
-        details.push({ courseId: cid, count: items.length });
+        details.push({ courseId: cid, count: perCourseProcessed });
       } catch (e) {
         details.push({ courseId: cid, error: String(e.message || e) });
       }
     }
 
-    return res.status(200).json({ ok: true, imported, details });
+    return res.status(200).json({ ok: true, processed, insertedNew, updatedExisting, uniqueAssignmentsThisRun: seenThisRun.size, details });
   } catch (e) {
     return res.status(500).json({ error: 'internal_error', detail: String(e.message || e) });
   }
