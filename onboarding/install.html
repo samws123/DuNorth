@@ -12,8 +12,12 @@
     <style>
       .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
       .stack { text-align: center; }
-      .big-cta { height: 64px; padding: 0 32px; border-radius: 999px; min-width: 360px; font-size: 16px; font-weight: 700; }
+      .big-cta { height: 64px; padding: 0 32px; border-radius: 999px; min-width: 320px; font-size: 16px; font-weight: 700; }
+      .btnrow { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
       .foot { margin-top: 14px; font-size: 13px; color: var(--muted); }
+      .status { margin-top: 8px; font-size: 13px; }
+      .ok { color: #059669; }
+      .bad { color: #dc2626; }
     </style>
   </head>
   <body>
@@ -21,8 +25,12 @@
       <header class="brand">DuNorth</header>
       <main class="screen">
         <div class="stack">
-          <button id="goInstall" class="btn primary big-cta">Add the extension to Chrome</button>
+          <div class="btnrow">
+            <button id="goInstall" class="btn primary big-cta">Add the extension to Chrome</button>
+            <button id="confirmInstalled" class="btn big-cta">I installed it</button>
+          </div>
           <div class="foot">**This is a helper extension, but mandatory for us to function.</div>
+          <div id="status" class="status"></div>
         </div>
       </main>
     </div>
@@ -33,7 +41,7 @@
         window.open('https://chromewebstore.google.com/detail/lectureping/lhfclolcgndpomhfdijbocgcbjhfjkah', '_blank', 'noopener');
       });
 
-      // Bridge helper for silent detection after user returns
+      // Bridge helper
       function bridgeCall(type, payload, timeoutMs = 800){
         return new Promise((resolve) => {
           const reqId = Math.random().toString(36).slice(2);
@@ -47,14 +55,14 @@
 
       async function checkInstalled(){ try { const r = await bridgeCall('PING', {}, 900); return !!(r && r.ok); } catch { return false; } }
 
-      // Auto-redirect to chat once the extension is detected (user returns from store)
-      (async () => {
-        for (let i = 0; i < 12; i++) { // ~12s passive check
-          const ok = await checkInstalled();
-          if (ok) { window.location.href = '../chat/chat.html?connected=1'; return; }
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      })();
+      // Only proceed after the user explicitly confirms install
+      const statusEl = document.getElementById('status');
+      document.getElementById('confirmInstalled').addEventListener('click', async () => {
+        statusEl.textContent = 'Checking…'; statusEl.className = 'status';
+        const ok = await checkInstalled();
+        if (ok) { statusEl.textContent = 'Extension detected. Opening chat…'; statusEl.className = 'status ok'; setTimeout(()=>{ window.location.href = '../chat/chat.html?connected=1'; }, 400); }
+        else { statusEl.textContent = 'Not detected. Make sure the extension is installed and enabled, then click again.'; statusEl.className = 'status bad'; }
+      });
     </script>
   </body>
   </html>
