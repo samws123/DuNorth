@@ -29,6 +29,7 @@ export async function ensureSchema() {
 
   // Safety/idempotent migrations: add newer columns if they don't exist
   const safetySql = `
+    ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS description TEXT;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS html_url TEXT;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS workflow_state TEXT;
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS points_possible NUMERIC;
@@ -36,6 +37,13 @@ export async function ensureSchema() {
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
     ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS google_sub TEXT;
     CREATE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub);
+    CREATE TABLE IF NOT EXISTS chat_context (
+      user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      last_course_id BIGINT,
+      last_assignment_ids BIGINT[],
+      last_answer_text TEXT,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
   `;
   try { await query(safetySql, []); } catch (_) {}
 

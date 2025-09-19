@@ -108,6 +108,15 @@ CREATE INDEX IF NOT EXISTS idx_pages_user_course ON pages(user_id, course_id);
 CREATE INDEX IF NOT EXISTS idx_files_user_course ON files(user_id, course_id);
 CREATE INDEX IF NOT EXISTS idx_announcements_user_course ON announcements(user_id, course_id);
 
+-- Lightweight chat context to keep recent state for the assistant
+CREATE TABLE IF NOT EXISTS chat_context (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  last_course_id BIGINT,
+  last_assignment_ids BIGINT[],
+  last_answer_text TEXT,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS sync_requests (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
