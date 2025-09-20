@@ -1,0 +1,3 @@
+(globalThis.TURBOPACK=globalThis.TURBOPACK||[]).push(["object"==typeof document?document.currentScript:void 0,{637104:e=>{"use strict";e.s({default:()=>a});var i=e.i(290479),r=e.i(826531),s=e.i(663018),n=e.i(373150);function t(){return(0,i.jsx)(r.default,{id:"library"})}let a=()=>(0,i.jsx)(n.Suspense,{fallback:(0,i.jsx)("div",{className:"fixed inset-0 flex justify-center items-center z-50 bg-background-primary",children:(0,i.jsx)("div",{className:"w-[56px] h-[56px]",children:(0,i.jsx)(s.LoadingSpinner,{variant:"screen",color:"gray"})})}),children:(0,i.jsx)(t,{})})}}]);
+
+//# sourceMappingURL=574d5b806a2a2e53.js.map

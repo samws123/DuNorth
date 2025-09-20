@@ -1,0 +1,7 @@
+(function() {
+  window._POSTHOG_REMOTE_CONFIG = window._POSTHOG_REMOTE_CONFIG || {};
+  window._POSTHOG_REMOTE_CONFIG['phc_bzybFMgkaXF2WmmNRLRkQorX4yMzUotjgIchWzUZcLI'] = {
+    config: {"token": "phc_bzybFMgkaXF2WmmNRLRkQorX4yMzUotjgIchWzUZcLI", "supportedCompression": ["gzip", "gzip-js"], "hasFeatureFlags": true, "captureDeadClicks": false, "capturePerformance": {"network_timing": true, "web_vitals": false, "web_vitals_allowed_metrics": null}, "autocapture_opt_out": false, "autocaptureExceptions": false, "analytics": {"endpoint": "/i/v0/e/"}, "elementsChainAsString": true, "errorTracking": {"autocaptureExceptions": false, "suppressionRules": []}, "sessionRecording": {"endpoint": "/s/", "consoleLogRecordingEnabled": true, "recorderVersion": "v2", "sampleRate": null, "minimumDurationMilliseconds": 10000, "linkedFlag": null, "networkPayloadCapture": {"recordBody": false, "recordHeaders": false}, "masking": {"maskAllInputs": false}, "urlTriggers": [], "urlBlocklist": [], "eventTriggers": [], "triggerMatchType": null, "scriptConfig": null, "recordCanvas": true, "canvasFps": 3, "canvasQuality": "0.4"}, "heatmaps": false, "surveys": false, "defaultIdentifiedOnly": true},
+    siteApps: []
+  }
+})();
