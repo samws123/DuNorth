@@ -176,8 +176,13 @@
   .calibrated-hero h1{font-size:64px!important;line-height:72px!important}
   .calibrated-hero p{font-size:14px!important;line-height:24px!important}
   .cta-pill{height:40px!important;padding:10px 20px!important;border-radius:9999px!important;font-weight:550!important}
-  header.fixed .relative{padding-left:8px!important;padding-right:8px!important}
-  .brand-text{font-family:interDisplayFont,Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-weight:700;font-size:20px;line-height:28px;letter-spacing:.01em;color:#0a0a0a}
+  .cta-pill-nav{height:36px!important;padding:8px 16px!important;border-radius:9999px!important;font-weight:600!important;font-size:14px!important}
+  header.fixed.topbar-compact{--bar-h:72px}
+  header.fixed.topbar-compact .inner{padding-left:16px!important;padding-right:16px!important}
+  header.fixed.topbar-compact .relative{min-height:var(--bar-h)!important;height:var(--bar-h)!important}
+  header.fixed.topbar-compact .brand-text{font-family:interDisplayFont,Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-weight:600;font-size:18px;line-height:24px;letter-spacing:0;color:#0a0a0a}
+  header.fixed.topbar-compact .gap-5{gap:12px!important}
+  header.fixed.topbar-compact nav .group.inline-flex{padding-left:10px!important;padding-right:10px!important}
 </style>
 <style id="an-motion">
   .animate-fade-in{opacity:0;filter:blur(8px);transform:translateY(40px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1),filter .7s cubic-bezier(.22,1,.36,1);will-change:opacity,transform,filter}
@@ -214,10 +219,10 @@
 </section>
 <div class="interdisplayfont_2089f826-module__Brl8jW__variable perfectlyninetiesfont_2da5d9ab-module__dLCW1G__variable">
 <div class="flex flex-col items-center bg-background-primary">
-<header class="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-xl">
+<header class="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-xl topbar-compact">
 <!--$-->
 <!--/$-->
-<div class="relative flex flex-row md:h-[88px] h-16 items-center px-9 md:px-13 lg:px-16 mx-auto max-w-[1280px] calibrated-container">
+<div class="relative inner flex flex-row md:h-[88px] h-16 items-center px-9 md:px-13 lg:px-16 mx-auto max-w-[1280px] calibrated-container">
 <a href="/anara" class="flex items-center mr-6">
 <span class="brand-text">DuNorth</span>
 </a>
@@ -281,12 +286,12 @@
 <div class="hidden md:flex items-center ml-auto">
 <div class="flex flex-row gap-5">
 
-<button aria-busy="false" class="inline-flex items-center relative justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-secondary text-secondary-foreground hover:bg-secondary-hover h-9.5 rounded-5 gap-3 font-[550] select-none !rounded-full px-6 py-3">
+<button aria-busy="false" class="inline-flex items-center relative justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-secondary text-secondary-foreground hover:bg-secondary-hover rounded-5 gap-3 font-[550] select-none !rounded-full px-5 py-2 cta-pill-nav">
 <span class="truncate">Log in</span>
 </button>
 
 
-<button data-react-hydrate="CtaButton" data-props='{"text":"Get DuNorth free","target":"/chat","className":"inline-flex items-center relative justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border h-9.5 rounded-5 gap-3 font-[550] select-none !rounded-full px-6 py-3"}' aria-busy="false" style="background:#000 !important;color:#fff !important;border-radius:9999px !important;padding:12px 24px !important;">
+<button data-react-hydrate="CtaButton" data-props='{"text":"Get DuNorth free","target":"/chat","className":"inline-flex items-center relative justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border gap-3 font-[550] select-none cta-pill-nav !rounded-full"}' aria-busy="false" style="background:#000 !important;color:#fff !important;">
 <span class="truncate">Get DuNorth free</span>
 </button>
 
