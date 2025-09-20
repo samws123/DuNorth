@@ -1,19 +1,11 @@
 {
-  "buildCommand": "echo 'Static HTML site - no build needed'",
-  "outputDirectory": ".",
-  "framework": null,
+  "buildCommand": "next build",
+  "outputDirectory": "out",
+  "framework": "nextjs",
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/anara/index.html"
-    },
     {
       "source": "/anara",
       "destination": "/anara/index.html"
-    },
-    {
-      "source": "/chat",
-      "destination": "/chat/index.html"
     }
   ]
 }
