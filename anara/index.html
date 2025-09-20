@@ -165,10 +165,11 @@
 
 <script src="js/chunks-ec548c7ce307cf6d.js" nomodule="">
 </script>
-<link rel="stylesheet" href="../css/animations.css" />
+<link rel="stylesheet" href="css/animations.css" />
 
 </head>
 <body>
+<div class="scroll-indicator" id="scroll-progress"></div>
 <div hidden="">
 <!--$-->
 <!--/$-->
@@ -327,12 +328,12 @@
 </div>
 <div class="flex flex-row items-center justify-center gap-[14px] mt-12 mx-auto animate-fade-in hero-element stagger-3">
 
-<button data-react-hydrate="CtaButton" data-props='{"text":"Get Anara free","target":"/chat","className":"inline-flex items-center select-none relative justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-background-inverse text-text-inverse rounded-7 gap-5 tracking-normal text-base leading-4 font-medium hover:scale-[1.02] transition-all duration-200 ease-in-out !rounded-full px-7 py-6 h-[40px]"}' aria-busy="false">
+<button data-react-hydrate="CtaButton" data-props='{"text":"Get Anara free","target":"/chat","className":"inline-flex items-center select-none relative justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-background-inverse text-text-inverse rounded-7 gap-5 tracking-normal text-base leading-4 font-medium hover:scale-[1.02] transition-all duration-200 ease-in-out !rounded-full px-7 py-6 h-[40px] btn-enhanced glow-effect gpu-accelerated"}' aria-busy="false">
 <span class="truncate">Get Anara free</span>
 </button>
 
 
-<button aria-busy="false" class="inline-flex items-center select-none relative justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-secondary hover:bg-secondary-hover rounded-7 gap-5 tracking-normal text-text-primary text-base leading-4 font-medium hover:scale-[1.02] transition-all duration-200 ease-in-out !rounded-full px-7 py-6 h-[40px]">
+<button aria-busy="false" class="inline-flex items-center select-none relative justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 box-border bg-secondary hover:bg-secondary-hover rounded-7 gap-5 tracking-normal text-text-primary text-base leading-4 font-medium hover:scale-[1.02] transition-all duration-200 ease-in-out !rounded-full px-7 py-6 h-[40px] btn-enhanced gpu-accelerated focus-ring">
 <span class="truncate">Request demo</span>
 </button>
 
@@ -427,7 +428,7 @@
 </div>
 <div class="w-full max-w-[1280px] flex flex-col pt-24 md:pt-36 lg:pt-[220px]">
 <div class="flex flex-col items-center">
-<h2 class="whitespace-break-spaces text-[32px] leading-[40px] font-[550] md:text-[56px] md:leading-[60px] !max-w-[700px] text-balance w-full pb-7 font-perfectlyNineties text-center max-w-[620px]">Understand any file or group of files, instantly</h2>
+<h2 class="whitespace-break-spaces text-[32px] leading-[40px] font-[550] md:text-[56px] md:leading-[60px] !max-w-[700px] text-balance w-full pb-7 font-perfectlyNineties text-center max-w-[620px] reveal-on-scroll">Understand any file or group of files, instantly</h2>
 <p class="text-sm md:text-base text-text-secondary text-center text-balance mx-auto max-w-[620px]">Whether it's a dense 200-page textbook, a new clinical study, or a technical research paper, just upload it and start asking questions</p>
 </div>
 <div class="md:mt-16 mt-10 w-full mx-auto bg-[#F7F7F7] rounded-6 px-9 sm:px-10 md:px-16">
@@ -438,7 +439,7 @@
 </div>
 <div class="w-full max-w-[1280px] flex flex-col pt-24 md:pt-36 lg:pt-[220px]">
 <div class="flex flex-col items-center">
-<h2 class="whitespace-break-spaces text-[32px] leading-[40px] font-[550] md:text-[56px] md:leading-[60px] !max-w-[700px] text-balance w-full pb-7 font-perfectlyNineties text-center max-w-[620px]">Get concise, scholarly answers to any question</h2>
+<h2 class="whitespace-break-spaces text-[32px] leading-[40px] font-[550] md:text-[56px] md:leading-[60px] !max-w-[700px] text-balance w-full pb-7 font-perfectlyNineties text-center max-w-[620px] reveal-on-scroll">Get concise, scholarly answers to any question</h2>
 <p class="text-sm md:text-base text-text-secondary text-center text-balance mx-auto max-w-[620px]">When you ask a question, Anara searches major academic databases like PubMed, arXiv and JSTOR to deliver a comprehensive response</p>
 </div>
 <div class="md:mt-16 mt-10 w-full mx-auto bg-[#F7F7F7] rounded-6 px-9 sm:px-10 md:px-16">
@@ -1126,7 +1127,8 @@
     hydrateAll();
   }
 </script>
-<script src="../js/animations.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/init-animations.js"></script>
 
 </body>
 </html>
