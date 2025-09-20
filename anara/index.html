@@ -177,6 +177,15 @@
   .calibrated-hero p{font-size:14px!important;line-height:24px!important}
   .cta-pill{height:40px!important;padding:10px 20px!important;border-radius:9999px!important;font-weight:550!important}
 </style>
+<style id="an-motion">
+  .animate-fade-in{opacity:0;filter:blur(8px);transform:translateY(40px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1),filter .7s cubic-bezier(.22,1,.36,1);will-change:opacity,transform,filter}
+  .animate-fade-in.animate-in{opacity:1;filter:none;transform:none}
+  .reveal-on-scroll{opacity:0;transform:translateY(40px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+  .reveal-on-scroll.revealed{opacity:1;transform:none}
+  .animate-image-blur{filter:blur(2px);transition:filter .7s cubic-bezier(.22,1,.36,1)}
+  .animate-image-blur.animate-in{filter:none}
+  @media (prefers-reduced-motion: reduce){.animate-fade-in,.reveal-on-scroll,.animate-image-blur{transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
+  </style>
 </head>
 <body>
 <div hidden="">
@@ -208,7 +217,7 @@
 <!--/$-->
 <div class="relative flex flex-row md:h-[88px] h-16 items-center px-9 md:px-13 lg:px-16 mx-auto max-w-[1280px] calibrated-container">
 <a href="/anara" class="flex items-center mr-6">
-<span class="text-xl md:text-2xl font-bold text-black">DuNorth</span>
+<img src="/anara/images/logo-dark.svg" alt="DuNorth" class="h-6 md:h-7 w-auto" loading="eager">
 </a>
 <!--$!-->
 <template data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING">
