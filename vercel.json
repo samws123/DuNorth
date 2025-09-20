@@ -1,9 +1,19 @@
 {
-  "framework": "nextjs",
+  "framework": null,
+  "buildCommand": "echo 'Using static HTML files'",
+  "outputDirectory": ".",
   "rewrites": [
+    {
+      "source": "/",
+      "destination": "/anara/index.html"
+    },
     {
       "source": "/anara",
       "destination": "/anara/index.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/chat/index.html"
     }
   ]
 }
