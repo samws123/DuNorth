@@ -140,12 +140,25 @@ class AnimationSystem {
   triggerInitialAnimations() {
     // Trigger hero section animations immediately
     setTimeout(() => {
-      const heroElements = document.querySelectorAll('.animate-fade-in');
-      heroElements.forEach((el, index) => {
-        setTimeout(() => {
-          el.classList.add('animate-in');
-        }, index * 100); // Stagger by 100ms
-      });
+    const heroElements = document.querySelectorAll('.animate-fade-in');
+    heroElements.forEach((el, index) => {
+      // Apply inline transition if CSS class not present in stylesheet
+      if (!getComputedStyle(el).transitionDuration || getComputedStyle(el).transitionDuration === '0s') {
+        el.style.transition = 'opacity 500ms cubic-bezier(0.22, 1, 0.36, 1), transform 600ms cubic-bezier(0.22, 1, 0.36, 1), filter 600ms cubic-bezier(0.22, 1, 0.36, 1)';
+      }
+      // Ensure initial hidden state
+      if (!el.classList.contains('animate-in')) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(40px)';
+        el.style.filter = 'blur(8px)';
+      }
+      setTimeout(() => {
+        el.classList.add('animate-in');
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+        el.style.filter = 'none';
+      }, index * 100); // Stagger by 100ms
+    });
     }, 300); // Small delay for page load
   }
 
