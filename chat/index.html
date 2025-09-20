@@ -1424,4 +1424,46 @@ img.ProseMirror-separator {
           b.parentNode.insertBefore(a, b);
         }
       }();
-    </script><ck-widget data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><div class="ck-style"><!----><!----></div></ck-widget><ck-pause-wall data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><!----></ck-pause-wall><ck-failed-payment-wall data-powered-by="Churnkey.co Automated Payment Recovery" vce-ready=""><!----></ck-failed-payment-wall><ck-managed-flow data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><!----></ck-managed-flow><script>(function(){function go(){location.href="/chat/convo.html";}document.addEventListener("keydown",function(e){if(e.key==="Enter"){go();}});document.querySelectorAll(".max-w[44rem], .flex.flex-col.items-between, main").forEach(function(el){el.addEventListener("click",function(){go();},{once:true});});})();</script></body></html>
+    </script><ck-widget data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><div class="ck-style"><!----><!----></div></ck-widget><ck-pause-wall data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><!----></ck-pause-wall><ck-failed-payment-wall data-powered-by="Churnkey.co Automated Payment Recovery" vce-ready=""><!----></ck-failed-payment-wall><ck-managed-flow data-powered-by="Churnkey.co Cancel Flows" vce-ready=""><!----></ck-managed-flow><script>(function(){function go(){location.href="/chat/convo.html";}document.addEventListener("keydown",function(e){if(e.key==="Enter"){go();}});document.querySelectorAll(".max-w[44rem], .flex.flex-col.items-between, main").forEach(function(el){el.addEventListener("click",function(){go();},{once:true});});})();</script>
+<script>
+// DuNorth: Aggressive UI cleanup
+setTimeout(function(){
+  // Remove all onboarding/tutorial elements
+  ['Create folders','Get started','Learn Anara','Search for papers','Summarize paper','Outline literature review','Create note','More','Chat with file','Chat with folder'].forEach(function(text){
+    document.querySelectorAll('*').forEach(function(el){
+      if(el.textContent && el.textContent.includes(text)){
+        var p = el;
+        for(var i=0; i<8 && p && p !== document.body; i++){
+          if(p.style || (p.className && (p.className.includes('bg-') || p.className.includes('p-') || p.className.includes('space-') || p.className.includes('fixed') || p.className.includes('absolute')))){
+            p.style.display = 'none';
+            break;
+          }
+          p = p.parentElement;
+        }
+        if(p === document.body) el.style.display = 'none';
+      }
+    });
+  });
+  
+  // Update banner text
+  document.querySelectorAll('h1,h2,h3').forEach(function(h){
+    if(h.textContent && (h.textContent.includes('Understand') || h.textContent.includes('research'))){
+      h.textContent = 'AI workspace that knows your assignments, readings, and deadlines.';
+    }
+  });
+  
+  // Update placeholder
+  document.querySelectorAll('textarea,input[type="text"],[contenteditable="true"]').forEach(function(el){
+    if(el.placeholder !== undefined) el.placeholder = 'What schoolwrok do you have to do today';
+    el.addEventListener('input', function(){
+      if(el.value && el.value.length > 0){
+        document.querySelectorAll('h1,h2,p').forEach(function(n){
+          if(n.textContent && /Understand|research|Get started/i.test(n.textContent)){
+            n.style.display = 'none';
+          }
+        });
+      }
+    });
+  });
+}, 1000);
+</script></body></html>
