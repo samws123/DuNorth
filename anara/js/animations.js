@@ -69,6 +69,11 @@ class AnimationSystem {
     revealElements.forEach(el => {
       el.style.opacity = '0';
       el.style.transform = 'translateY(40px)';
+      // Ensure transition is applied even if CSS is missing
+      const cs = getComputedStyle(el);
+      if (!cs.transitionDuration || cs.transitionDuration === '0s') {
+        el.style.transition = 'opacity 600ms cubic-bezier(0.22, 1, 0.36, 1), transform 700ms cubic-bezier(0.22, 1, 0.36, 1)';
+      }
     });
   }
 
