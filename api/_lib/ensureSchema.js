@@ -37,6 +37,15 @@ export async function ensureSchema() {
     ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
     ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS google_sub TEXT;
     CREATE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub);
+    -- Add additional columns to announcements table
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS last_reply_at TIMESTAMPTZ;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS html_url TEXT;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS author_name TEXT;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS author_id BIGINT;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS read_state TEXT;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS locked BOOLEAN;
+    ALTER TABLE IF EXISTS announcements ADD COLUMN IF NOT EXISTS published BOOLEAN;
     CREATE TABLE IF NOT EXISTS chat_context (
       user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       last_course_id BIGINT,

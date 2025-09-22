@@ -123,6 +123,13 @@ refreshBtn.addEventListener('click', async () => {
             if (ar.ok && aj?.ok) banner(`📝 Imported ${aj.imported} assignments.`);
             else banner(`❌ Assignments import failed: ${aj?.error || ar.status}`);
           } catch (e) { banner(`❌ Assignments import error: ${e.message}`); }
+          // Import announcements for all courses
+          try {
+            const anR = await fetch('/api/sync/import-announcements', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+            const anJ = await anR.json();
+            if (anR.ok && anJ?.ok) banner(`📢 Imported ${anJ.imported} announcements.`);
+            else banner(`❌ Announcements import failed: ${anJ?.error || anR.status}`);
+          } catch (e) { banner(`❌ Announcements import error: ${e.message}`); }
           // Auto-sync and extract for all courses
           try {
             const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
