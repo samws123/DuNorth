@@ -156,13 +156,44 @@ export default async function handler(req, res) {
     }
 
     // Announcements
-    const anns = await callCanvasPaged(baseUrl, cookieValue, `/api/v1/courses/${courseId}/discussion_topics?only_announcements=true&per_page=100`);
+    const anns = await callCanvasPaged(baseUrl, cookieValue, `/api/v1/courses/${courseId}/discussion_topics?only_announcements=true&per_page=100&include[]=all_dates&include[]=submission_types&include[]=rubric`);
     for (const a of anns) {
+      // Only process items that are actually announcements
+      if (!a.is_announcement) continue;
+      
       await query(
-        `INSERT INTO announcements(user_id, id, course_id, title, message, posted_at, raw_json)
-         VALUES($1,$2,$3,$4,$5,$6,$7)
-         ON CONFLICT (user_id, id) DO UPDATE SET title=EXCLUDED.title, message=EXCLUDED.message, posted_at=EXCLUDED.posted_at, raw_json=EXCLUDED.raw_json`,
-        [userId, a.id, courseId, a.title || null, a.message || null, a.posted_at ? new Date(a.posted_at) : null, a]
+        `INSERT INTO announcements(user_id, id, course_id, title, message, posted_at, created_at, last_reply_at, html_url, author_name, author_id, read_state, locked, published, raw_json)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+         ON CONFLICT (user_id, id) DO UPDATE SET
+           title = EXCLUDED.title,
+           message = EXCLUDED.message,
+           posted_at = EXCLUDED.posted_at,
+           created_at = EXCLUDED.created_at,
+           last_reply_at = EXCLUDED.last_reply_at,
+           html_url = EXCLUDED.html_url,
+           author_name = EXCLUDED.author_name,
+           author_id = EXCLUDED.author_id,
+           read_state = EXCLUDED.read_state,
+           locked = EXCLUDED.locked,
+           published = EXCLUDED.published,
+           raw_json = EXCLUDED.raw_json`,
+        [
+          userId,
+          a.id,
+          courseId,
+          a.title || null,
+          a.message || null,
+          a.posted_at ? new Date(a.posted_at) : null,
+          a.created_at ? new Date(a.created_at) : null,
+          a.last_reply_at ? new Date(a.last_reply_at) : null,
+          a.html_url || null,
+          a.author?.display_name || a.user_name || null,
+          a.author?.id || null,
+          a.read_state || null,
+          a.locked || false,
+          a.published || false,
+          a
+        ]
       );
     }
 
