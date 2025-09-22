@@ -99,14 +99,14 @@ refreshBtn.addEventListener('click', async () => {
     try {
       res = await new Promise((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('timeout')), 8000);
-        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl }, (r) => {
+        chrome.runtime.sendMessage(EXTENSION_ID, { type: 'SYNC_CANVAS', userToken: token, apiEndpoint: 'https://du-north-three.vercel.app/api', baseUrl }, (r) => {
           clearTimeout(t);
           if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
           resolve(r);
         });
       });
     } catch {
-      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north.vercel.app/api', baseUrl });
+      res = await bridgeCall('SYNC_CANVAS', { userToken: token, apiEndpoint: 'https://du-north-three.vercel.app/api', baseUrl });
     }
 
     if (res?.ok) {
