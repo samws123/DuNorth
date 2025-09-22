@@ -110,7 +110,7 @@ refreshBtn.addEventListener('click', async () => {
     }
 
     if (res?.ok) {
-      // Skip noisy server-auth bubble; course import below proves cookie works
+      // Skip noisy server-auth bubble; course import below proves cookie work
       try {
         const resp = await fetch('/api/sync/import-courses', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         const imp = await resp.json();
