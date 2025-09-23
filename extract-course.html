@@ -13,7 +13,7 @@
     <script>
       (async () => {
         const p = new URLSearchParams(location.search);
-        const courseId = Number(p.get('courseId')||'20031');
+        const courseId = Number(p.get('courseId')||'0');
         const silent = p.get('silent')==='1';
         const logEl = document.getElementById('log');
         const log = (m)=>{ if(!silent){ logEl.textContent += '\n'+m; } };

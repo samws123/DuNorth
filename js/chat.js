@@ -123,21 +123,27 @@ refreshBtn.addEventListener('click', async () => {
             if (ar.ok && aj?.ok) banner(`📝 Imported ${aj.imported} assignments.`);
             else banner(`❌ Assignments import failed: ${aj?.error || ar.status}`);
           } catch (e) { banner(`❌ Assignments import error: ${e.message}`); }
-          // Import announcements for all courses
+          // Import grades for all courses
           try {
-            const anR = await fetch('/api/sync/import-announcements', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-            const anJ = await anR.json();
-            if (anR.ok && anJ?.ok) banner(`📢 Imported ${anJ.imported} announcements.`);
-            else banner(`❌ Announcements import failed: ${anJ?.error || anR.status}`);
-          } catch (e) { banner(`❌ Announcements import error: ${e.message}`); }
+            const gr = await fetch('/api/sync/import-grades', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+            const gj = await gr.json();
+            if (gr.ok && gj?.ok) banner(`📊 Imported ${gj.imported} grades.`);
+            else banner(`❌ Grades import failed: ${gj?.error || gr.status}`);
+          } catch (e) { banner(`❌ Grades import error: ${e.message}`); }
+          // Import announcements for all courses
+          // try {
+          //   const anR = await fetch('/api/sync/import-announcements', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+          //   const anJ = await anR.json();
+          //   if (anR.ok && anJ?.ok) banner(`📢 Imported ${anJ.imported} announcements.`);
+          //   else banner(`❌ Announcements import failed: ${anJ?.error || anR.status}`);
+          // } catch (e) { banner(`❌ Announcements import error: ${e.message}`); }
           // Auto-sync and extract for all courses
           try {
             const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
             const list = await listR.json();
             const coursesAll = Array.isArray(list?.courses) ? list.courses : [];
-            // Hardcode test course for now
-            const targetIds = [20031];
-            const courses = coursesAll.filter(c => targetIds.includes(c.id));
+            // Process all courses for the user
+            const courses = coursesAll;
             for (const c of courses) {
               banner(`⏳ Syncing course ${c.id}…`);
               try {
@@ -151,44 +157,77 @@ refreshBtn.addEventListener('click', async () => {
               } catch(e) { banner(`❌ Sync ${c.id} error: ${e.message}`); }
               // Extract text for the course files (multi-format)
               try {
+                banner(`🔍 Starting text extraction for course ${c.id}...`);
                 const eR = await fetch('/api/sync/extract-all', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ courseId: c.id, limit: 200, force: false }) });
                 const eJ = await eR.json();
                 if (eR.ok && eJ?.ok) {
-                  banner(`🧠 Extracted ${eJ.stored} texts in course ${c.id} (processed ${eJ.processed}).`);
+                  banner(`🧠 Server extracted ${eJ.stored} texts in course ${c.id} (processed ${eJ.processed}).`);
+                  if (eJ.details && eJ.details.length > 0) {
+                    const successful = eJ.details.filter(d => d.ok).length;
+                    const failed = eJ.details.filter(d => d.error).length;
+                    const skipped = eJ.details.filter(d => d.skipped).length;
+                    banner(`📊 Details: ${successful} successful, ${failed} failed, ${skipped} skipped`);
+                  }
                 } else {
-                  banner(`❌ Extract ${c.id} failed: ${eJ?.error || eR.status}`);
+                  banner(`❌ Server extract ${c.id} failed: ${eJ?.error || eR.status}`);
+                  if (eJ?.detail) banner(`Details: ${eJ.detail}`);
                 }
               } catch(e) { banner(`❌ Extract ${c.id} error: ${e.message}`); }
             }
-            // Client-side fallback: sequentially extract PDFs with missing text
+            // Client-side fallback: sequentially extract text from all supported file types
             try {
-              async function runClientPdfExtractQueue(courseId) {
-                banner(`🧩 Client PDF fallback: scanning course ${courseId}…`);
+              async function runClientExtractQueue(courseId) {
+                banner(`🧩 Client extraction fallback: scanning course ${courseId}…`);
                 const fl = await fetch(`/api/debug/files-db?courseId=${courseId}`).then(r=>r.json()).catch(()=>null);
                 const files = Array.isArray(fl?.files) ? fl.files : [];
-                const pending = files.filter(f => String(f.filename||'').toLowerCase().endsWith('.pdf') && (!f.text_len || Number(f.text_len) === 0)).map(f=>f.id);
-                if (!pending.length) { banner('🧩 No PDFs need fallback.'); return; }
+                banner(`📁 Found ${files.length} total files in course ${courseId}`);
+                
+                // Filter for text-containing file types that need extraction
+                const textFileExtensions = ['.pdf', '.docx', '.pptx', '.xlsx', '.html', '.htm', '.txt', '.csv', '.md', '.json', '.rtf'];
+                const textFiles = files.filter(f => {
+                  const filename = String(f.filename || '').toLowerCase();
+                  return textFileExtensions.some(ext => filename.endsWith(ext));
+                });
+                banner(`📄 Found ${textFiles.length} text-containing files`);
+                
+                const pending = textFiles.filter(f => {
+                  const needsExtraction = !f.extracted_text || String(f.extracted_text || '').trim().length === 0;
+                  return needsExtraction;
+                }).map(f => ({ id: f.id, filename: f.filename, extracted_text: f.extracted_text }));
+                
+                banner(`🔍 ${pending.length} files need text extraction`);
+                if (!pending.length) { 
+                  banner('✅ All text files already have extracted text.'); 
+                  return; 
+                }
+                
                 const ifr = document.createElement('iframe');
                 ifr.style.width='0'; ifr.style.height='0'; ifr.style.border='0'; ifr.style.position='absolute'; ifr.style.left='-9999px';
                 document.body.appendChild(ifr);
-                for (const id of pending) {
-                  banner(`📄 Fallback extracting PDF ${id}…`);
+                
+                for (const file of pending) {
+                  const ext = String(file.filename || '').split('.').pop()?.toLowerCase() || 'unknown';
+                  banner(`📄 Extracting text from ${ext.toUpperCase()} file ${file.id}…`);
                   try {
-                    ifr.src = `/extract.html?fileId=${id}`;
+                    ifr.src = `/extract.html?fileId=${file.id}`;
                     // poll until stored
                     let ok=false; const start=Date.now();
-                    while (!ok && Date.now()-start < 45000) {
+                    while (!ok && Date.now()-start < 200000) {
                       await new Promise(r=>setTimeout(r, 2000));
-                      const resp = await fetch(`/api/debug/file-text-raw?fileId=${id}`);
+                      const resp = await fetch(`/api/debug/file-text-raw?fileId=${file.id}`);
                       if (resp.status === 200) { ok = true; break; }
                     }
-                    banner(ok ? `✅ Stored text for ${id}` : `⚠️ Timeout storing text for ${id}`);
-                  } catch (e) { banner(`❌ Fallback error for ${id}: ${e.message}`); }
+                    banner(ok ? `✅ Extracted text from ${file.filename}` : `⚠️ Timeout extracting ${file.filename}`);
+                  } catch (e) { banner(`❌ Extraction error for ${file.filename}: ${e.message}`); }
                 }
                 document.body.removeChild(ifr);
-                banner('🧩 Client PDF fallback complete.');
+                banner('🧩 Client text extraction complete.');
               }
-              await runClientPdfExtractQueue(20031);
+              
+              // Extract from all courses
+              for (const course of courses) {
+                await runClientExtractQueue(course.id);
+              }
             } catch (_) {}
           } catch (e) {
             banner(`⚠️ Could not auto-extract for all courses: ${e.message}`);
@@ -199,20 +238,25 @@ refreshBtn.addEventListener('click', async () => {
       } catch (e) {
         banner(`❌ Import failed: ${e.message || 'network error'}`);
       }
-      // Hardcoded test: sync a specific course and report counts
+      // Sync all courses and report counts
       try {
-        const testCourseId = 20031; // HIS400-S03_F2025 (Princeton)
-        const syncR = await fetch('/api/sync/course', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ courseId: testCourseId })
-        });
-        const syncJ = await syncR.json();
-        if (syncR.ok && syncJ?.ok) {
-          const c = syncJ.counts || {};
-          banner(`✅ Synced course ${testCourseId}: ${c.pages || 0} pages, ${c.files || 0} files, ${c.announcements || 0} announcements.`);
-        } else {
-          banner(`❌ Course sync failed: ${syncJ?.error || syncR.status}`);
+        const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
+        const list = await listR.json();
+        const allCourses = Array.isArray(list?.courses) ? list.courses : [];
+        
+        for (const course of allCourses) {
+          const syncR = await fetch('/api/sync/course', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ courseId: course.id })
+          });
+          const syncJ = await syncR.json();
+          if (syncR.ok && syncJ?.ok) {
+            const c = syncJ.counts || {};
+            banner(`✅ Synced course ${course.id}: ${c.pages || 0} pages, ${c.files || 0} files, ${c.announcements || 0} announcements.`);
+          } else {
+            banner(`❌ Course sync failed: ${syncJ?.error || syncR.status}`);
+          }
         }
       } catch (e) {
         banner(`❌ Course sync failed: ${e.message || 'network error'}`);

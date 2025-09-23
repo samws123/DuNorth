@@ -53,6 +53,29 @@ export async function ensureSchema() {
       last_answer_text TEXT,
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+    -- Create grades table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS grades (
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      id BIGINT,
+      assignment_id BIGINT,
+      course_id BIGINT,
+      student_id BIGINT,
+      score NUMERIC,
+      grade TEXT,
+      excused BOOLEAN DEFAULT FALSE,
+      late BOOLEAN DEFAULT FALSE,
+      missing BOOLEAN DEFAULT FALSE,
+      submitted_at TIMESTAMPTZ,
+      graded_at TIMESTAMPTZ,
+      workflow_state TEXT,
+      submission_type TEXT,
+      attempt INTEGER,
+      raw_json JSONB,
+      PRIMARY KEY (user_id, id)
+    );
+    -- Create indexes for grades table
+    CREATE INDEX IF NOT EXISTS idx_grades_user_assignment ON grades(user_id, assignment_id);
+    CREATE INDEX IF NOT EXISTS idx_grades_user_course ON grades(user_id, course_id);
   `;
   try { await query(safetySql, []); } catch (_) {}
 
