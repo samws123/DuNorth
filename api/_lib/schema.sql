@@ -159,4 +159,29 @@ CREATE TABLE IF NOT EXISTS user_canvas_sessions (
 CREATE INDEX IF NOT EXISTS idx_user_canvas_sessions_user 
 ON user_canvas_sessions(user_id);
 
+-- Canvas grades/submissions
+CREATE TABLE IF NOT EXISTS grades (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  id BIGINT,
+  assignment_id BIGINT,
+  course_id BIGINT,
+  student_id BIGINT,
+  score NUMERIC,
+  grade TEXT,
+  excused BOOLEAN DEFAULT FALSE,
+  late BOOLEAN DEFAULT FALSE,
+  missing BOOLEAN DEFAULT FALSE,
+  submitted_at TIMESTAMPTZ,
+  graded_at TIMESTAMPTZ,
+  workflow_state TEXT,
+  submission_type TEXT,
+  attempt INTEGER,
+  raw_json JSONB,
+  PRIMARY KEY (user_id, id)
+);
+
+-- Index for fast grade lookups
+CREATE INDEX IF NOT EXISTS idx_grades_user_assignment ON grades(user_id, assignment_id);
+CREATE INDEX IF NOT EXISTS idx_grades_user_course ON grades(user_id, course_id);
+
 
