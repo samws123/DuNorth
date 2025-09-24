@@ -76,6 +76,14 @@ export async function ensureSchema() {
     -- Create indexes for grades table
     CREATE INDEX IF NOT EXISTS idx_grades_user_assignment ON grades(user_id, assignment_id);
     CREATE INDEX IF NOT EXISTS idx_grades_user_course ON grades(user_id, course_id);
+    -- Add Stripe subscription columns to users table
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'inactive';
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS subscription_current_period_start TIMESTAMPTZ;
+    ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS subscription_current_period_end TIMESTAMPTZ;
+    CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
+    CREATE INDEX IF NOT EXISTS idx_users_stripe_subscription ON users(stripe_subscription_id);
   `;
   try { await query(safetySql, []); } catch (_) {}
 

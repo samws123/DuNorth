@@ -56,4 +56,66 @@ function setError(id, msg) { const el = document.querySelector(`.error[data-for=
 function clearErrors() { document.querySelectorAll('.error').forEach(el => el.textContent = ''); }
 function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
+// Upgrade Modal Functionality
+const upgradeBtn = document.getElementById('upgrade-btn');
+const modalOverlay = document.getElementById('upgrade-modal-overlay');
+const modalClose = document.getElementById('modal-close');
+const continueCheckout = document.getElementById('continue-checkout');
+
+if (upgradeBtn) {
+  upgradeBtn.addEventListener('click', () => {
+    modalOverlay.classList.add('active');
+  });
+}
+
+if (modalClose) {
+  modalClose.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
+  });
+}
+
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.classList.remove('active');
+    }
+  });
+}
+
+if (continueCheckout) {
+  continueCheckout.addEventListener('click', async () => {
+    try {
+      continueCheckout.disabled = true;
+      continueCheckout.textContent = 'Processing...';
+      
+      const token = localStorage.getItem('dunorth_token');
+      if (!token) {
+        alert('Please sign in to upgrade your account.');
+        return;
+      }
+      
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(`Checkout failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      alert(`Checkout error: ${error.message}`);
+    } finally {
+      continueCheckout.disabled = false;
+      continueCheckout.textContent = 'Continue to checkout';
+    }
+  });
+}
+
 
