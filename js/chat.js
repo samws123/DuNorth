@@ -356,11 +356,11 @@ if (continueCheckout) {
       continueCheckout.disabled = true;
       continueCheckout.textContent = 'Processing...';
       
-      const token = localStorage.getItem('dunorth_token');
-      if (!token) {
-        banner('Please sign in to upgrade your account.');
-        return;
-      }
+      // const token = localStorage.getItem('dunorth_token');
+      // if (!token) {
+      //   banner('Please sign in to upgrade your account.');
+      //   return;
+      // }
       
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
