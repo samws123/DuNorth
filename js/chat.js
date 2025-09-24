@@ -300,4 +300,94 @@ function addMsg(role, text) { const div = document.createElement('div'); div.cla
 function banner(text) { addMsg('assistant', text); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
+// Upgrade Modal Functionality
+const upgradeBtn = document.getElementById('upgrade-btn');
+const modalOverlay = document.getElementById('upgrade-modal-overlay');
+const modalClose = document.getElementById('modal-close');
+const continueCheckout = document.getElementById('continue-checkout');
+
+// Plan selection state
+let selectedPlan = 'yearly'; // Default to yearly plan
+
+if (upgradeBtn) {
+  upgradeBtn.addEventListener('click', () => {
+    modalOverlay.classList.add('active');
+  });
+}
+
+if (modalClose) {
+  modalClose.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
+  });
+}
+
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.classList.remove('active');
+    }
+  });
+}
+
+// Plan selection functionality
+document.addEventListener('DOMContentLoaded', () => {
+  const planCards = document.querySelectorAll('.plan-card');
+  
+  planCards.forEach(card => {
+    card.addEventListener('click', () => {
+      // Remove active class from all cards
+      planCards.forEach(c => c.classList.remove('active'));
+      
+      // Add active class to clicked card
+      card.classList.add('active');
+      
+      // Update selected plan
+      selectedPlan = card.dataset.plan;
+      
+      console.log('Selected plan:', selectedPlan);
+    });
+  });
+});
+
+if (continueCheckout) {
+  continueCheckout.addEventListener('click', async () => {
+    try {
+      banner('Creating checkout session...');
+      continueCheckout.disabled = true;
+      continueCheckout.textContent = 'Processing...';
+      
+      const token = localStorage.getItem('dunorth_token');
+      if (!token) {
+        banner('Please sign in to upgrade your account.');
+        return;
+      }
+      
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          plan: selectedPlan
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.checkoutUrl) {
+        banner('Redirecting to Stripe checkout...');
+        window.location.href = data.checkoutUrl;
+      } else {
+        banner(`Checkout failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      banner(`Checkout error: ${error.message}`);
+    } finally {
+      continueCheckout.disabled = false;
+      continueCheckout.textContent = 'Continue to checkout';
+    }
+  });
+}
+
 

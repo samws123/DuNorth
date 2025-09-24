@@ -23,10 +23,15 @@
       .user { background: #f8fafc; align-self: flex-end; max-width: 78%; }
       .assistant { background: #fff; align-self: flex-start; max-width: 78%; }
       .empty { text-align: center; color: var(--muted); margin-top: 16vh; font-size: 22px; }
-      .composer { position: fixed; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0), #fff 12px); padding: 12px 16px; border-top: 1px solid var(--border); }
-      .composer .row { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; }
-      textarea { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border); resize: none; height: 52px; }
-      .send { padding: 0 16px; border-radius: 12px; background: var(--primary); color: #fff; border: none; cursor: pointer; }
+      .composer { position: fixed; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0), #fff 12px); padding: 12px 16px; }
+      .composer .row { max-width: 900px; margin: 0 auto; position: relative; }
+      .input-container { position: relative; display: flex; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; min-height: 52px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+      .input-container:focus-within { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 3px rgba(79,70,229,0.12); }
+      textarea { flex: 1; background: transparent; border: none; outline: none; resize: none; font-size: 16px; line-height: 1.5; font-family: inherit; min-height: 24px; max-height: 120px; }
+      textarea::placeholder { color: #64748b; }
+      .send { position: absolute; right: 8px; top: 70%; transform: translateY(-50%); background: #e2e8f0; border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: #64748b; transition: all 0.2s ease; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+      .send:hover, .send:active { background: #000000; color: white; }
+      .send svg { width: 16px; height: 16px; }
       /* Modal */
       .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.3); display: none; align-items: center; justify-content: center; }
       .modal .sheet { width: 520px; background:#fff; border-radius: 12px; border:1px solid var(--border); padding: 20px; }
@@ -37,6 +42,14 @@
     <div class="topbar">
       <div class="brand">DuNorth</div>
       <div class="toolbar">
+        <button id="upgrade-btn" class="iconbtn" title="Upgrade" style="background: #000000; color: white; border-color: #000000;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+          Upgrade
+        </button>
         <button id="refresh" class="iconbtn" title="Refresh Canvas">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -59,15 +72,57 @@
 
     <div class="composer">
       <div class="row">
-        <textarea id="input" placeholder="Message DuNorth…"></textarea>
-        <button id="send" class="send">Send</button>
+        <div class="input-container">
+          <textarea id="input" placeholder="Understand, research and write about anything"></textarea>
+          <button id="send" class="send">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up h-7 w-7" aria-hidden="true">
+              <path d="m5 12 7-7 7 7"></path>
+              <path d="M12 19V5"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Install modal removed -->
+    <!-- Upgrade Modal -->
+    <div class="modal-overlay" id="upgrade-modal-overlay">
+      <div class="upgrade-modal">
+        <button class="modal-close" id="modal-close">&times;</button>
+        
+        <h2>Upgrade for unlimited access to DuNorth</h2>
+        <p class="subtitle">Invest in your success with a paid plan. Unlimited access, cancel anytime.</p>
+        
+        <ul class="feature-list">
+          <li>Unlimited AI words</li>
+         
+        </ul>
+        
+        <!-- Plan Selection -->
+        <div class="plan-selection">
+          <div class="plan-card yearly-plan active" data-plan="yearly">
+            <div class="plan-header">
+              <span class="plan-name">Yearly</span>
+              <span class="plan-badge">Save 40%</span>
+            </div>
+            <div class="plan-price">$12 <span class="plan-currency">USD</span></div>
+            <div class="plan-description">per month, billed annually</div>
+          </div>
+          
+          <div class="plan-card monthly-plan" data-plan="monthly">
+            <div class="plan-header">
+              <span class="plan-name">Monthly</span>
+            </div>
+            <div class="plan-price">$20 <span class="plan-currency">USD</span></div>
+            <div class="plan-description">per month, billed monthly</div>
+          </div>
+        </div>
+        
+        <button class="upgrade-btn" id="continue-checkout">Continue to checkout</button>
+        
+        
+      </div>
+    </div>
 
     <script src="../js/chat.js"></script>
   </body>
-  </html>
-
-
+</html>
