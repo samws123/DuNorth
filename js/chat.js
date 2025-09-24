@@ -131,12 +131,12 @@ refreshBtn.addEventListener('click', async () => {
             else banner(`❌ Grades import failed: ${gj?.error || gr.status}`);
           } catch (e) { banner(`❌ Grades import error: ${e.message}`); }
           // Import announcements for all courses
-          // try {
-          //   const anR = await fetch('/api/sync/import-announcements', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-          //   const anJ = await anR.json();
-          //   if (anR.ok && anJ?.ok) banner(`📢 Imported ${anJ.imported} announcements.`);
-          //   else banner(`❌ Announcements import failed: ${anJ?.error || anR.status}`);
-          // } catch (e) { banner(`❌ Announcements import error: ${e.message}`); }
+          try {
+            const anR = await fetch('/api/sync/import-announcements', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+            const anJ = await anR.json();
+            if (anR.ok && anJ?.ok) banner(`📢 Imported ${anJ.imported} announcements.`);
+            else banner(`❌ Announcements import failed: ${anJ?.error || anR.status}`);
+          } catch (e) { banner(`❌ Announcements import error: ${e.message}`); }
           // Auto-sync and extract for all courses
           try {
             const listR = await fetch(`/api/debug/courses-db?userId=${encodeURIComponent(userId)}`);
@@ -356,11 +356,13 @@ if (continueCheckout) {
       continueCheckout.disabled = true;
       continueCheckout.textContent = 'Processing...';
       
-      // const token = localStorage.getItem('dunorth_token');
-      // if (!token) {
-      //   banner('Please sign in to upgrade your account.');
-      //   return;
-      // }
+      const userId = localStorage.getItem('dunorth_user')
+      const tokenResponse = await fetch('/api/auth/token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
+    const { token } = await tokenResponse.json();
+      if (!token) {
+        banner('Please sign in to upgrade your account.');
+        return;
+      }
       
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
