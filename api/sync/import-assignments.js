@@ -1,174 +1,140 @@
-import { query } from '../_lib/pg.js';
+/**
+ * Import Assignments Handler
+ * Refactored to use shared utilities and modular structure
+ */
+
 import { ensureSchema } from '../_lib/ensureSchema.js';
-import jwt from 'jsonwebtoken';
+import { authenticateSync } from './utils/auth.js';
+import { callCanvasPaged } from './utils/canvas-api.js';
+import { ImportStats, upsertAssignment, getUserCourses } from './utils/database.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+/**
+ * Import assignments from planner and per-course endpoints
+ * @param {string} userId - User ID
+ * @param {string} baseUrl - Canvas base URL
+ * @param {string} cookieValue - Session cookie
+ * @returns {Promise<Object>} Import statistics
+ */
+async function importAssignments(userId, baseUrl, cookieValue) {
+  const stats = new ImportStats();
+  await stats.initializeExisting('assignments', userId);
 
-async function callPaged(baseUrl, cookie, path) {
-  const names = ['canvas_session', '_legacy_normandy_session'];
-  const out = [];
-  let url = `${baseUrl}${path}`;
-  for (let page = 0; page < 50 && url; page++) {
-    let resp;
-    for (const n of names) {
-      resp = await fetch(url, { headers: { 'Accept': 'application/json', 'Cookie': `${n}=${cookie}`, 'User-Agent': 'DuNorth-Server/1.0' }, redirect: 'follow' });
-      if (resp.ok) break;
-      if (![401,403].includes(resp.status)) break;
+  // Get user courses for per-course import
+  const courses = await getUserCourses(userId);
+
+  // 1) Fast path: Planner items (captures upcoming assignments quickly)
+  try {
+    const now = new Date();
+    const startISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+    const endISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120).toISOString();
+    
+    const plannerItems = await callCanvasPaged(
+      baseUrl, 
+      cookieValue, 
+      `/api/v1/planner/items?per_page=100&start_date=${encodeURIComponent(startISO)}&end_date=${encodeURIComponent(endISO)}`
+    );
+    
+    let plannerProcessed = 0;
+    for (const item of plannerItems) {
+      if (!item || String(item.plannable_type).toLowerCase() !== 'assignment') continue;
+      
+      const assignment = item.plannable || {};
+      const courseId = item.course_id || item.context_code?.replace('course_', '') || null;
+      
+      if (!assignment.id || !courseId) continue;
+      
+      // Convert planner item to assignment format
+      const assignmentData = {
+        id: assignment.id,
+        name: assignment.name || item.title || null,
+        due_at: assignment.due_at || item.plannable_date,
+        description: assignment.description || item.details || null,
+        updated_at: assignment.updated_at,
+        points_possible: assignment.points_possible || null,
+        submission_types: Array.isArray(assignment.submission_types) ? assignment.submission_types : (assignment.submission_types ? [assignment.submission_types] : []),
+        html_url: assignment.html_url || item.html_url || null,
+        published: assignment.published === true,
+        raw_json: item
+      };
+      
+      await upsertAssignment(userId, assignmentData, Number(courseId));
+      
+      if (stats.recordItem(assignment.id)) {
+        plannerProcessed++;
+      }
     }
-    if (!resp?.ok) {
-      const txt = await resp.text().catch(()=> '');
-      if (resp.status === 404 && /disabled for this course/i.test(txt)) return out;
-      if (resp.status === 401 || resp.status === 403) return out;
-      throw new Error(`Canvas ${resp.status}: ${txt.slice(0,200)}`);
-    }
-    const data = await resp.json();
-    if (Array.isArray(data)) out.push(...data);
-    const link = resp.headers.get('Link') || '';
-    const m = /<([^>]+)>;\s*rel="next"/.exec(link);
-    url = m ? m[1] : null;
+    
+    stats.addDetail({ source: 'planner', count: plannerProcessed });
+  } catch (error) {
+    stats.addDetail({ source: 'planner', error: String(error.message || error) });
   }
-  return out;
+
+  // 2) Per-course assignments (authoritative)
+  for (const course of courses) {
+    const courseId = course.id;
+    try {
+      const assignments = await callCanvasPaged(
+        baseUrl, 
+        cookieValue, 
+        `/api/v1/courses/${courseId}/assignments?per_page=100&include[]=all_dates&include[]=submission_types&include[]=rubric`
+      );
+      
+      let perCourseProcessed = 0;
+      for (const assignment of assignments) {
+        await upsertAssignment(userId, assignment, courseId);
+        
+        if (stats.recordItem(assignment.id)) {
+          perCourseProcessed++;
+        }
+      }
+      
+      stats.addDetail({ courseId, count: perCourseProcessed });
+    } catch (error) {
+      stats.addDetail({ courseId, error: String(error.message || error) });
+    }
+  }
+
+  return stats.getStats();
 }
 
+/**
+ * Main assignments import handler with shared utilities
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ * @returns {Promise<Object>} Response
+ */
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
     await ensureSchema();
 
-    // Auth
-    const auth = req.headers.authorization || '';
-    if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing token' });
-    let userId;
-    try { userId = jwt.verify(auth.slice(7), JWT_SECRET).userId; } catch { return res.status(401).json({ error: 'Invalid token' }); }
+    // Authenticate and get session
+    const { userId, baseUrl, cookieValue } = await authenticateSync(req);
 
-    // Session
-    const s = await query(
-      `SELECT base_url, session_cookie FROM user_canvas_sessions
-       WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, created_at DESC LIMIT 1`,
-      [userId]
-    );
-    if (!s.rows[0]) return res.status(404).json({ error: 'No stored session' });
-    const baseUrl = s.rows[0].base_url; const cookie = s.rows[0].session_cookie;
+    // Import assignments using modular approach
+    const stats = await importAssignments(userId, baseUrl, cookieValue);
 
-    // Courses (for later fallback)
-    const c = await query(`SELECT id FROM courses WHERE user_id = $1 LIMIT 1000`, [userId]);
+    return res.status(200).json({ ok: true, ...stats });
 
-    let processed = 0; let insertedNew = 0; let updatedExisting = 0; const details = [];
-    // Preload existing ids to distinguish new vs update
-    const existing = await query(`SELECT id FROM assignments WHERE user_id = $1`, [userId]);
-    const existingIds = new Set(existing.rows.map(r => Number(r.id)));
-    // Track IDs seen in this run to avoid double-counting planner vs per-course
-    const seenThisRun = new Set();
-
-    // 1) Fast path: Planner items (captures upcoming assignments quickly)
-    try {
-      const now = new Date();
-      const startISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
-      const endISO = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 120).toISOString();
-      const planner = await callPaged(baseUrl, cookie, `/api/v1/planner/items?per_page=100&start_date=${encodeURIComponent(startISO)}&end_date=${encodeURIComponent(endISO)}`);
-      let plannerProcessed = 0;
-      for (const it of planner) {
-        if (!it || String(it.plannable_type).toLowerCase() !== 'assignment') continue;
-        const a = it.plannable || {};
-        const cid = it.course_id || it.context_code?.replace('course_', '') || null;
-        if (!a.id || !cid) continue;
-        const aid = Number(a.id);
-        await query(
-          `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
-           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-           ON CONFLICT (user_id, id) DO UPDATE SET
-             name = EXCLUDED.name,
-             due_at = EXCLUDED.due_at,
-             description = EXCLUDED.description,
-             updated_at = EXCLUDED.updated_at,
-             points_possible = EXCLUDED.points_possible,
-             submission_types = EXCLUDED.submission_types,
-             html_url = EXCLUDED.html_url,
-             workflow_state = EXCLUDED.workflow_state,
-             raw_json = EXCLUDED.raw_json`,
-          [
-            userId,
-            a.id,
-            Number(cid),
-            a.name || it.title || null,
-            (a.due_at || it.plannable_date) ? new Date(a.due_at || it.plannable_date) : null,
-            a.description || it.details || null,
-            a.updated_at ? new Date(a.updated_at) : null,
-            a.points_possible || null,
-            Array.isArray(a.submission_types) ? a.submission_types : (a.submission_types ? [a.submission_types] : []),
-            a.html_url || it.html_url || null,
-            a.published === true ? 'published' : 'unpublished',
-            it
-          ]
-        );
-        if (!seenThisRun.has(aid)) {
-          processed++;
-          plannerProcessed++;
-          if (!existingIds.has(aid)) insertedNew++; else updatedExisting++;
-          seenThisRun.add(aid);
-          existingIds.add(aid);
-        }
-      }
-      details.push({ source: 'planner', count: plannerProcessed });
-    } catch (e) {
-      details.push({ source: 'planner', error: String(e.message || e) });
+  } catch (error) {
+    console.error('sync/import-assignments error', error);
+    
+    // Handle specific error types
+    if (error.message === 'Missing token' || error.message === 'Invalid token') {
+      return res.status(401).json({ error: error.message });
     }
-
-    // 2) Per-course assignments (authoritative)
-    for (const row of c.rows) {
-      const cid = row.id;
-      try {
-        const path = `/api/v1/courses/${cid}/assignments?per_page=100&include[]=all_dates&include[]=submission_types&include[]=rubric`;
-        const items = await callPaged(baseUrl, cookie, path);
-        let perCourseProcessed = 0;
-        for (const a of items) {
-          await query(
-            `INSERT INTO assignments(user_id, id, course_id, name, due_at, description, updated_at, points_possible, submission_types, html_url, workflow_state, raw_json)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-             ON CONFLICT (user_id, id) DO UPDATE SET
-               name = EXCLUDED.name,
-               due_at = EXCLUDED.due_at,
-               description = EXCLUDED.description,
-               updated_at = EXCLUDED.updated_at,
-               points_possible = EXCLUDED.points_possible,
-               submission_types = EXCLUDED.submission_types,
-               html_url = EXCLUDED.html_url,
-               workflow_state = EXCLUDED.workflow_state,
-               raw_json = EXCLUDED.raw_json`,
-            [
-              userId,
-              a.id,
-              cid,
-              a.name || null,
-              a.due_at ? new Date(a.due_at) : null,
-              a.description || null,
-              a.updated_at ? new Date(a.updated_at) : null,
-              a.points_possible || null,
-              Array.isArray(a.submission_types) ? a.submission_types : (a.submission_types ? [a.submission_types] : []),
-              a.html_url || null,
-              a.published === true ? 'published' : 'unpublished',
-              a
-            ]
-          );
-          const aid = Number(a.id);
-          if (!seenThisRun.has(aid)) {
-            processed++;
-            perCourseProcessed++;
-            if (!existingIds.has(aid)) insertedNew++; else updatedExisting++;
-            seenThisRun.add(aid);
-            existingIds.add(aid);
-          }
-        }
-        details.push({ courseId: cid, count: perCourseProcessed });
-      } catch (e) {
-        details.push({ courseId: cid, error: String(e.message || e) });
-      }
+    
+    if (error.message === 'No stored Canvas session') {
+      return res.status(404).json({ error: 'No stored session' });
     }
-
-    // 'imported' kept for backward compatibility with older frontends
-    return res.status(200).json({ ok: true, processed, insertedNew, updatedExisting, uniqueAssignmentsThisRun: seenThisRun.size, imported: seenThisRun.size, details });
-  } catch (e) {
-    return res.status(500).json({ error: 'internal_error', detail: String(e.message || e) });
+    
+    return res.status(500).json({ 
+      error: 'internal_error', 
+      detail: String(error.message || error) 
+    });
   }
 }
 
