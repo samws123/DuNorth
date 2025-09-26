@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="user-name" content="jasara.pauling" />
     <title>DuNorth – Chat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,7 @@
       .chat { max-width: 900px; margin: 0 auto; padding: 16px; min-height: calc(100vh - 180px); }
       .banner { margin: 12px auto 0; max-width: 900px; border: 1px dashed var(--border); background: #fafafa; padding: 10px 12px; border-radius: 10px; display: none; align-items: center; justify-content: space-between; gap: 12px; }
       .banner .actions { display:flex; gap:8px; }
-      .messages { display: flex; flex-direction: column; gap: 14px; margin-bottom: 110px; }
+      .messages { display: flex; flex-direction: column; gap: 14px; padding-bottom: 200px; }
       .msg { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; line-height: 1.5; }
       .user { background: #f8fafc; align-self: flex-end; max-width: 78%; }
       .assistant { background: #fff; align-self: flex-start; max-width: 78%; }
@@ -29,7 +30,7 @@
       .input-container:focus-within { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 3px rgba(79,70,229,0.12); }
       textarea { flex: 1; background: transparent; border: none; outline: none; resize: none; font-size: 16px; line-height: 1.5; font-family: inherit; min-height: 24px; max-height: 120px; }
       textarea::placeholder { color: #64748b; }
-      .send { position: absolute; right: 8px; top: 70%; transform: translateY(-50%); background: #e2e8f0; border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: #64748b; transition: all 0.2s ease; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+      .send { position: absolute; right: 8px; top: 123%; transform: translateY(-50%); background: #e2e8f0; border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: #64748b; transition: all 0.2s ease; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
       .send:hover, .send:active { background: #000000; color: white; }
       .send svg { width: 16px; height: 16px; }
       /* Modal */
@@ -39,47 +40,249 @@
     </style>
   </head>
   <body>
-    <div class="topbar">
-      <div class="brand">DuNorth</div>
-      <div class="toolbar">
-        <button id="upgrade-btn" class="iconbtn" title="Upgrade" style="background: #000000; color: white; border-color: #000000;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-            <path d="M2 17l10 5 10-5"></path>
-            <path d="M2 12l10 5 10-5"></path>
-          </svg>
-          Upgrade
-        </button>
-        <button id="refresh" class="iconbtn" title="Refresh Canvas">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
-            <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
-          </svg>
-          Refresh Canvas
-        </button>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+          <!-- Header -->
+          <div class="sidebar-header">
+            <button class="user-button" id="user-button">
+              <span class="user-name">Loading...</span>
+              <svg class="chevron-down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+            <div class="header-actions">
+              <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m11 17-5-5 5-5"></path>
+                  <path d="m18 17-5-5 5-5"></path>
+                </svg>
+              </button>
+              <button class="add-button" id="add-button" title="Add new">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14"></path>
+                  <path d="M12 5v14"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <div class="sidebar-nav">
+            <button class="nav-item active">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+                <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              </svg>
+              <span>Home</span>
+            </button>
+            <button class="nav-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M21 9H3"></path>
+                <path d="M21 15H3"></path>
+              </svg>
+              <span>Library</span>
+            </button>
+            <button class="nav-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21 21-4.34-4.34"></path>
+                <circle cx="11" cy="11" r="8"></circle>
+              </svg>
+              <span>Search</span>
+            </button>
+          </div>
+
+          <!-- Scrollable Content -->
+          <div class="sidebar-scroll">
+            <!-- Chats Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-section="chats">
+                <svg class="chevron-right expanded" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+                <span>Chats</span>
+                <button class="section-add-btn" title="Create a new chat">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="section-content">
+                <p class="empty-message">No chats available</p>
+              </div>
+            </div>
+
+            <!-- Folders Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-section="folders">
+                <svg class="chevron-right expanded" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+                <span>Folders</span>
+                <button class="section-add-btn" title="Create a new folder">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="section-content">
+                <div class="folder-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+                  </svg>
+                  <span>Age reversal research</span>
+                  <button class="folder-menu-btn" title="Folder options">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="1"></circle>
+                      <circle cx="12" cy="5" r="1"></circle>
+                      <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="sidebar-bottom">
+            <button class="bottom-action">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                <circle cx="12" cy="8" r="6"></circle>
+              </svg>
+              <span>Invite and earn</span>
+            </button>
+            <button class="bottom-action">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 10v12"></path>
+                <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path>
+              </svg>
+              <span>Feedback</span>
+            </button>
+            <button class="bottom-action">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <path d="M12 17h.01"></path>
+              </svg>
+              <span>Support</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Extension banner removed per request; chat remains clean -->
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="modern-header">
+          <div class="header-left">
+            <button class="sidebar-toggle-btn" id="desktop-sidebar-toggle" title="Toggle sidebar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M9 3v18"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="header-right">
+            <button id="refresh" class="header-action-btn" title="Refresh Canvas">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+              </svg>
+              <span>Refresh Canvas</span>
+            </button>
+            <button id="upgrade-btn" class="upgrade-header-btn" title="Upgrade">
+              <span>Upgrade</span>
+            </button>
+          </div>
+        </div>
 
-    <main class="chat">
-      <div id="messages" class="messages">
-        <div class="empty" id="empty">How can I help?</div>
-      </div>
-    </main>
+        <!-- Extension banner removed per request; chat remains clean -->
 
-    <div class="composer">
-      <div class="row">
-        <div class="input-container">
-          <textarea id="input" placeholder="Understand, research and write about anything"></textarea>
-          <button id="send" class="send">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up h-7 w-7" aria-hidden="true">
-              <path d="m5 12 7-7 7 7"></path>
-              <path d="M12 19V5"></path>
-            </svg>
-          </button>
+        <main class="chat">
+          <div id="messages" class="messages">
+            <div class="empty" id="empty">How can I help?</div>
+          </div>
+        </main>
+
+        <div class="modern-composer">
+          <div class="composer-container">
+            <div class="modern-input-wrapper">
+              <!-- Text Input Area -->
+              <div class="input-section">
+                <textarea id="input" placeholder="Understand, research and write about anything" rows="1"></textarea>
+                <button id="send" class="send">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m-7 7l7-7 7 7"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="action-buttons">
+                <!-- Model Selection Dropdown -->
+                <div class="dropdown-container">
+                  <button class="action-btn dropdown-btn" id="model-dropdown">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    </svg>
+                    <span id="selected-model">fast</span>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div class="dropdown-menu" id="model-menu">
+                    <button class="dropdown-item" data-model="fast">fast</button>
+                    <button class="dropdown-item" data-model="thinking">thinking</button>
+                    <button class="dropdown-item" data-model="pro">pro</button>
+                  </div>
+                </div>
+                
+                <!-- Word Count Dropdown -->
+                <div class="dropdown-container">
+                  <button class="action-btn dropdown-btn" id="words-dropdown">
+                    <span id="selected-words">250 words</span>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div class="dropdown-menu" id="words-menu">
+                    <button class="dropdown-item" data-words="100 words">100 words</button>
+                    <button class="dropdown-item" data-words="250 words">250 words</button>
+                    <button class="dropdown-item" data-words="500 words">500 words</button>
+                    <button class="dropdown-item" data-words="1000 words">1000 words</button>
+                  </div>
+                </div>
+                
+                <!-- Sort Button -->
+                <button class="action-btn icon-btn" title="Sort">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                  </svg>
+                </button>
+                
+                <!-- Add Button -->
+                <button class="action-btn icon-btn" title="Add">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                  </svg>
+                </button>
+                
+                <!-- Archive Button -->
+                <button class="action-btn icon-btn" title="Archive">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m10 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V8m10 0H7"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -122,6 +325,9 @@
         
       </div>
     </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <script type="module" src="../js/chat.js"></script>
   </body>
