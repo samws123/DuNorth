@@ -1,0 +1,409 @@
+/* Custom CSS Variables for Email Verification Page */
+:root {
+  --verification-bg: #ffffff;
+  --verification-text-primary: #000000;
+  --verification-text-secondary: #666666;
+  --verification-text-tertiary: #999999;
+  --verification-border-primary: #e5e5e5;
+  --verification-border-secondary: #f0f0f0;
+  --verification-button-secondary: #f5f5f5;
+  --verification-button-secondary-hover: #eeeeee;
+  --verification-button-primary: #000000;
+  --verification-button-primary-hover: #333333;
+  --verification-blue: #007bff;
+  --verification-popover-hover: rgba(0, 0, 0, 0.05);
+  --verification-success: #28a745;
+  --verification-error: #dc3545;
+}
+
+/* Reset and base styles */
+.verification-container {
+  min-height: 100vh;
+  background: var(--verification-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.32px;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+}
+
+/* Header with back button */
+.verification-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-start;
+  padding: 44px 36px;
+  z-index: 10;
+}
+
+.back-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in;
+}
+
+.back-button:hover {
+  background: var(--verification-popover-hover);
+}
+
+/* Main content */
+.verification-content {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.verification-form-container {
+
+}
+
+/* Title and description */
+.verification-title {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.verification-title h2 {
+  font-size: 20px;
+  margin: 0 0 12px 0;
+  color: var(--verification-text-primary);
+  font-weight: 500;
+  display: inline-block;
+  vertical-align: top;
+  text-decoration: inherit;
+  text-wrap: balance;
+}
+
+.verification-description {
+  font-size: 14px;
+  color: var(--verification-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  max-width: 255px;
+  margin-left: auto;
+  margin-right: auto;
+  text-wrap: balance;
+}
+
+.verification-description strong {
+  color: var(--verification-text-primary);
+  font-weight: 600;
+}
+
+/* Code input container */
+.code-input-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.code-inputs {
+  display: flex;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--verification-border-primary);
+}
+
+.code-input {
+  width: 52.8px;
+  height: 2.75rem;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid var(--verification-border-primary);
+  background: var(--verification-bg);
+  color: var(--verification-text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.code-input:last-child {
+  border-right: none;
+}
+
+.code-input:focus {
+  background: #f8f9fa;
+  box-shadow: inset 0 0 0 2px var(--verification-blue);
+}
+
+.code-input.filled {
+  background: #f0f8ff;
+  color: var(--verification-blue);
+}
+
+.code-input.error {
+  background: #fff5f5;
+  color: var(--verification-error);
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Continue section */
+.continue-section {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.continue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 14px;
+  height: 2.75rem;
+  padding: 0 28px;
+  border-radius: 16px;
+  background: var(--verification-button-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 20px;
+  width: 100%;
+  max-width: 280px;
+ align-self: center;
+  box-sizing: border-box;
+}
+
+.continue-btn:hover:not(:disabled) {
+  background: var(--verification-button-primary-hover);
+  transform: scale(1.02);
+}
+
+.continue-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--verification-text-tertiary);
+  transform: none;
+}
+
+.continue-btn span {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Email client buttons */
+.email-clients {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.client-buttons {
+  display: flex;
+  gap: 8px;
+  align-self: center;
+}
+
+.client-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 14px;
+  height: 2.75rem;
+  padding: 0 20px;
+  border-radius: 16px;
+  background: var(--verification-button-secondary);
+  color: var(--verification-text-primary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.client-btn:hover {
+  background: var(--verification-button-secondary-hover);
+  transform: scale(1.02);
+}
+
+.client-btn:active {
+  transform: scale(0.98);
+}
+
+.client-btn span {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Join text */
+.join-text {
+  font-size: 14px;
+  color: var(--verification-text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+/* Footer */
+.verification-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
+  color: var(--verification-text-tertiary);
+  width: 256px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.terms-text {
+  font-size: 14px;
+  color: var(--verification-text-tertiary);
+}
+
+.terms-text a {
+  color: var(--verification-text-primary);
+  text-decoration: underline;
+  transition: all 0.15s ease-in;
+}
+
+.terms-text a:hover {
+  color: var(--verification-text-primary);
+  opacity: 0.8;
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Loading state */
+.continue-btn[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.continue-btn[aria-busy="true"] span {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Error and success states */
+.verification-error,
+.verification-success {
+  font-size: 14px;
+  text-align: center;
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 12px;
+  animation: slideIn 0.3s ease;
+}
+
+.verification-error {
+  color: var(--verification-error);
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+}
+
+.verification-success {
+  color: var(--verification-success);
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .verification-container {
+    padding: 12px;
+  }
+  
+  .verification-header {
+    padding: 24px 20px;
+  }
+  
+  .verification-content {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .verification-form-container {
+    padding: 0 20px;
+  }
+  
+  .verification-footer {
+    width: calc(100% - 40px);
+    max-width: 256px;
+    padding: 20px;
+  }
+  
+  .code-inputs {
+    gap: 2px;
+  }
+  
+  .code-input {
+    width: 48px;
+    height: 56px;
+  }
+}
+
+/* Focus states for accessibility */
+.back-button:focus,
+.continue-btn:focus,
+.client-btn:focus {
+  outline: 2px solid var(--verification-blue);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .code-inputs {
+    border-width: 3px;
+  }
+  
+  .code-input:focus {
+    box-shadow: inset 0 0 0 3px var(--verification-blue);
+  }
+}
