@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DuNorth – Email Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/email-verification.css" />
+  </head>
+  <body>
+    <div class="verification-container">
+      <!-- Header with back button -->
+      <div class="verification-header">
+        <button class="back-button" type="button" onclick="history.back()">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#666666"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-arrow-left"
+            aria-hidden="true"
+          >
+            <path d="m12 19-7-7 7-7"></path>
+            <path d="M19 12H5"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Main content -->
+      <div class="verification-content">
+        <div class="verification-form-container">
+          <!-- Title and description -->
+          <div class="verification-title">
+            <h2>Log in or sign up</h2>
+            <p class="verification-description">
+              We sent a temporary log in code. Check your inbox at 
+              <strong id="user-email">your email</strong>
+            </p>
+          </div>
+
+          <!-- Code input fields -->
+          <div class="code-input-container">
+            <div class="code-inputs">
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-0"
+                data-index="0"
+              />
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-1"
+                data-index="1"
+              />
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-2"
+                data-index="2"
+              />
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-3"
+                data-index="3"
+              />
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-4"
+                data-index="4"
+              />
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="code-input"
+                id="code-5"
+                data-index="5"
+              />
+            </div>
+          </div>
+
+          <!-- Continue button -->
+          <div class="continue-section">
+            <button
+              type="button"
+              class="continue-btn"
+              id="continue-btn"
+            >
+              <span>Continue</span>
+            </button>
+          </div>
+
+          <!-- Email client buttons -->
+          <div class="email-clients">
+            <div class="client-buttons">
+              <button type="button" class="client-btn" id="open-gmail">
+                <span>Open Gmail</span>
+              </button>
+              <button type="button" class="client-btn" id="open-outlook">
+                <span>Open Outlook</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Join text -->
+          <p class="join-text">Join 100k+ students</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="verification-footer">
+        <span class="terms-text">
+          By continuing, you agree to DuNorth's 
+          <a href="/termsofservice" target="_blank" rel="noopener noreferrer">Terms</a> 
+          and 
+          <a href="/privacypolicy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+        </span>
+      </div>
+    </div>
+
+    <script src="js/email-verification.js"></script>
+  </body>
+</html>
