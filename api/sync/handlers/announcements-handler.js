@@ -29,6 +29,15 @@ export async function syncAnnouncements(userId, courseId, baseUrl, cookieValue) 
     
     try {
       await upsertAnnouncement(userId, announcement, courseId);
+      if (announcement.message) {
+        await saveToPinecone(userId, courseId, announcement.id, announcement.message, {
+          type: 'announcement',
+          title: announcement.title,
+          url: announcement.html_url,
+          author: announcement.author?.display_name,
+        });
+      }
+
       syncedCount++;
     } catch (error) {
       console.warn(`Failed to sync announcement ${announcement.id}:`, error.message);

@@ -5,6 +5,7 @@
 
 import { query } from '../../_lib/pg.js';
 import { callCanvasPaged, callCanvasAPI } from '../utils/canvas-api.js';
+import { saveToPinecone } from '../utils/saveToPinecone.js';
 
 /**
  * Sync pages for a course
@@ -44,6 +45,19 @@ export async function syncPages(userId, courseId, baseUrl, cookieValue) {
             fullPage
           ]
         );
+        if (fullPage.body) {
+          await saveToPinecone(
+            userId,
+            courseId,
+            fullPage.page_id || fullPage.id,
+            fullPage.body,
+            {
+              type: 'page',
+              title: fullPage.title,
+              url: fullPage.url,
+            }
+          );
+        }
         syncedCount++;
       }
     } catch (error) {
@@ -87,7 +101,12 @@ export async function syncSyllabus(userId, courseId, baseUrl, cookieValue) {
           { source: 'course.syllabus_body' }
         ]
       );
-      
+      await saveToPinecone(userId, courseId, syntheticId, courseData.syllabus_body, {
+        type: 'syllabus',
+        title: 'Syllabus',
+        url: 'syllabus',
+      });
+
       return true;
     }
   } catch (error) {

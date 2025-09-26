@@ -70,6 +70,13 @@ export async function syncFiles(userId, courseId, baseUrl, cookieValue) {
           [extractedText, userId, file.id]
         );
       }
+
+      await saveToPinecone(userId, courseId, file.id, extractedText, {
+        type: 'file',
+        filename: file.display_name || file.filename,
+        contentType: file.content_type,
+      });
+
       
       syncedCount++;
     } catch (error) {

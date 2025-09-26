@@ -7,6 +7,7 @@ import { ensureSchema } from '../_lib/ensureSchema.js';
 import { authenticateSync } from './utils/auth.js';
 import { callCanvasPaged } from './utils/canvas-api.js';
 import { ImportStats, upsertAnnouncement, getUserCourses } from './utils/database.js';
+import { saveToPinecone } from './utils/saveToPinecone.js';
 
 /**
  * Import announcements from all user courses
@@ -38,7 +39,22 @@ async function importAnnouncements(userId, baseUrl, cookieValue) {
         if (!announcement.is_announcement) continue;
         
         await upsertAnnouncement(userId, announcement, courseId);
-        
+        console.log('Announcement text: ', announcement)
+
+        const text = [announcement.title, announcement.message]
+            .filter(Boolean)
+            .join('\n\n');
+
+        if (text) {
+          await saveToPinecone(userId, announcement.id, courseId, text, {
+            type: 'announcement',
+            course_id: courseId,
+            title: announcement.title,
+            author: announcement.author?.display_name || announcement.user_name || null,
+            posted_at: announcement.posted_at || null,
+          });
+        }
+
         if (stats.recordItem(announcement.id)) {
           perCourseProcessed++;
         }
