@@ -1,8 +1,33 @@
 import { query } from '../_lib/pg.js';
 import { ensureSchema } from '../_lib/ensureSchema.js';
 import jwt from 'jsonwebtoken';
+import { embeddings, Index } from '../../config/pinecone.js';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { PineconeStore } from '@langchain/pinecone';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+
+async function saveToPinecone(userId, courseId, docId, text, metadata = {}) {
+  if (!text) return;
+
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 500,
+    chunkOverlap: 50,
+  });
+
+  const docs = await splitter.createDocuments([text], {
+    userId,
+    courseId,
+    docId,
+    ...metadata,
+  });
+
+  await PineconeStore.fromDocuments(docs, embeddings, {
+    pineconeIndex: Index,
+    namespace: `${userId}-${courseId}`, // optional separation
+  });
+}
 
 async function callCanvasPaged(baseUrl, cookieValue, path) {
   const tryNames = ['canvas_session', '_legacy_normandy_session'];
@@ -89,6 +114,13 @@ export default async function handler(req, res) {
          ON CONFLICT (user_id, id) DO UPDATE SET title=EXCLUDED.title, url=EXCLUDED.url, body=EXCLUDED.body, raw_json=EXCLUDED.raw_json`,
         [userId, page.page_id || page.id, courseId, page.title || null, page.url || null, page.body || null, page]
       );
+      console.log('saving to pinecone', page.page_id || page.id, page.body);
+      await saveToPinecone(userId, courseId, page.page_id || page.id, page.body, {
+        type: "page",
+        title: page.title,
+        url: page.url,
+      });
+    
     }
 
     // Syllabus body (store as a synthetic page entry with negative id)
@@ -97,6 +129,7 @@ export default async function handler(req, res) {
         headers: { 'Accept': 'application/json', 'Cookie': `canvas_session=${cookieValue}`, 'User-Agent': 'DuNorth-Server/1.0' },
         redirect: 'follow'
       });
+      console.log(cj?.syllabus_body, ' ::::::cj?.syllabus_body')
       if (cr.ok) {
         const cj = await cr.json();
         if (cj?.syllabus_body) {
@@ -152,6 +185,13 @@ export default async function handler(req, res) {
       if (extractedText) {
         await query(`UPDATE files SET extracted_text = $1 WHERE user_id = $2 AND id = $3`, [extractedText, userId, f.id]);
       }
+      console.log('saving to pinecone 2', page.page_id || page.id, page.body);
+
+      await saveToPinecone(userId, courseId, f.id, extractedText, {
+        type: "file",
+        filename: f.display_name || f.filename,
+      });
+    
       savedFiles++;
     }
 

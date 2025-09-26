@@ -1,6 +1,8 @@
 import { query } from '../_lib/pg.js';
 import { ensureSchema } from '../_lib/ensureSchema.js';
 import OpenAI from 'openai';
+import { PineconeStore } from '@langchain/pinecone';
+import { embeddings, Index } from '../../config/pinecone.js';
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 function toDocumentStyle(text) {
@@ -74,6 +76,45 @@ async function fetchCanvasSelf(baseUrl, cookieValue) {
     }
   }
   throw new Error('Unauthorized');
+}
+
+/**
+ * Return a LangChain PineconeStore for the same namespace used at ingestion.
+ * Namespace pattern: `${userId}-${courseId}` if courseId provided, else `${userId}`
+ */
+async function getVectorStore(userId, courseId) {
+  try {
+    const namespace = courseId ? `${userId}-${courseId}` : `${userId}`;
+    return await PineconeStore.fromExistingIndex(embeddings, {
+      pineconeIndex: Index,
+      namespace,
+    });
+  } catch (err) {
+    console.error('getVectorStore error:', err?.message || err);
+    return null;
+  }
+}
+
+async function retrieveContext(userId, courseId, query, k = 5) {
+  try {
+    const vs = await getVectorStore(userId, courseId);
+    if (!vs) return ''; // fall back to DB-only if pinecone not available
+    const docs = await vs.similaritySearch(query, k);
+    if (!docs || docs.length === 0) return '';
+    const parts = docs.map((d, i) => {
+      const title = (d.metadata && (d.metadata.title || d.metadata.filename || d.metadata.source)) || `source ${i+1}`;
+      const txt = (d.pageContent || '').replace(/\s+/g, ' ').trim().slice(0, 2000); // keep each chunk <= 2k chars
+      return `${title}\n${txt}`;
+    });
+    // join with spacing; you can limit total length if needed
+    let out = parts.join("\n\n");
+    const MAX = 4000;
+    if (out.length > MAX) out = out.slice(0, MAX); // crude truncation to avoid sending huge contexts
+    return out;
+  } catch (err) {
+    console.error("retrieveContext error:", err?.message || err);
+    return '';
+  }
 }
 
 export default async function handler(req, res) {
@@ -396,27 +437,40 @@ Context:\n${contextChunks.join('\n\n')}\n\nUser request: ${message}`;
     return res.status(200).json({ role: 'assistant', text: answer });
   }
   if (openai) {
+    // --- RAG-enabled fallback: fetch top vector context and include it in the prompt ---
+    const { courseId } = await parseCourseFilter(m);
+    let vecContext = '';
+    try {
+      vecContext = await retrieveContext(userId, courseId || null, message, 6);
+    } catch (e) {
+      console.error('retrieveContext failed:', e?.message || e);
+      vecContext = '';
+    }
+
+    let contextSection = '';
+    if (vecContext && vecContext.trim().length) {
+      contextSection = `CONTEXT (most relevant first):\n${vecContext}\n\n`;
+    }
+
     const prompt = `You are DuNorth, a helpful study assistant.
-Provide answers in document style (no Markdown):
+${contextSection}Provide answers in document style (no Markdown):
 HEADING lines in ALL CAPS, numbered steps as 1. 2. 3., and hyphen bullets for sub-points.
 Solve the following problem completely, step by step if needed.
 User: ${message}`;
-  
+
     const r = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,   // a bit more creative
       max_tokens: 1000    // allow longer answers
     });
-  
+
     return res.status(200).json({ role: 'assistant', text: toDocumentStyle(r.choices?.[0]?.message?.content || '') });
   }
-  
+
   return res.status(200).json({ role: 'assistant', text: 'Ask about assignments due; LLM disabled in demo.' });
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     return res.status(200).json({ role: 'assistant', text: `Server error: ${msg}` });
   }
 }
-
-

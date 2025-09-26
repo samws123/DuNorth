@@ -106,6 +106,18 @@ export default async function handler(req, res) {
               announcement
             ]
           );
+          if (announcement.message) {
+            await saveToPinecone(userId, cid, announcement.id, announcement.message, {
+              type: 'announcement',
+              announcement_id: announcement.id,
+              courseId: cid || 0,
+              title: announcement.title,
+              posted_at: announcement.posted_at,
+              url: announcement.html_url,
+              author: announcement.author?.display_name || announcement.user_name,
+            });
+          }
+          
           
           const aid = Number(announcement.id);
           if (!seenThisRun.has(aid)) {

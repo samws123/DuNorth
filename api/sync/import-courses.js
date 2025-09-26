@@ -85,6 +85,19 @@ export default async function handler(req, res) {
                raw_json = EXCLUDED.raw_json`,
         [userId, c.id, c.name || null, c.course_code || null, c.term || null, c]
       );
+      if (c.name || c.course_code || c.term) {
+        const text = [c.name, c.course_code, c.term]
+          .filter(Boolean)
+          .join(' - ');
+      
+        await saveToPinecone(userId, c.id, c.id, text, {
+          type: 'course',
+          courseId: c.id || 0,
+          name: c.name,
+          code: c.course_code,
+          term: c.term,
+        });
+      }
       imported++;
     }
 

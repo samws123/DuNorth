@@ -69,6 +69,7 @@ export default async function handler(req, res) {
       let plannerProcessed = 0;
       for (const it of planner) {
         if (!it || String(it.plannable_type).toLowerCase() !== 'assignment') continue;
+        
         const a = it.plannable || {};
         const cid = it.course_id || it.context_code?.replace('course_', '') || null;
         if (!a.id || !cid) continue;
@@ -101,6 +102,16 @@ export default async function handler(req, res) {
             it
           ]
         );
+        if (a.description) {
+          await saveToPinecone(userId, Number(cid), aid, a.description, {
+            type: 'assignment',
+            assignment_id: aid,
+            courseId: cid || 0,
+            title: a.name,
+            due_at: a.due_at,
+            url: a.html_url,
+          });
+        }
         if (!seenThisRun.has(aid)) {
           processed++;
           plannerProcessed++;
@@ -150,6 +161,16 @@ export default async function handler(req, res) {
               a
             ]
           );
+          if (a.description) {
+            await saveToPinecone(userId, cid, a.id, a.description, {
+              type: 'assignment',
+              assignment_id: a.id,
+              courseId: cid || 0,
+              title: a.name,
+              due_at: a.due_at,
+              // url: a.html_url,
+            });
+          }
           const aid = Number(a.id);
           if (!seenThisRun.has(aid)) {
             processed++;
