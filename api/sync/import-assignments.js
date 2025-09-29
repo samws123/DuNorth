@@ -7,7 +7,7 @@ import { ensureSchema } from '../_lib/ensureSchema.js';
 import { authenticateSync } from './utils/auth.js';
 import { callCanvasPaged } from './utils/canvas-api.js';
 import { ImportStats, upsertAssignment, getUserCourses } from './utils/database.js';
-import { saveToPinecone } from './utils/saveToPinecone.js';
+import { cleanText, saveToPinecone } from './utils/saveToPinecone.js';
 
 /**
  * Import assignments from planner and per-course endpoints
@@ -61,10 +61,9 @@ async function importAssignments(userId, baseUrl, cookieValue) {
       await upsertAssignment(userId, assignmentData, Number(courseId));
       console.log("assignmentData: ", assignmentData)
       
-      const text = [assignmentData.name, assignmentData.description]
-        .filter(Boolean)
-        .join('\n\n');
-
+      const text = cleanText(
+        [assignmentData.name, assignmentData.description].filter(Boolean).join('\n\n')
+      );
 
       if (text) {
         await saveToPinecone(userId, assignmentData.id, Number(courseId), text, {
@@ -101,10 +100,10 @@ async function importAssignments(userId, baseUrl, cookieValue) {
       for (const assignment of assignments) {
         await upsertAssignment(userId, assignment, courseId);
         console.log(assignment, ' :assignment')
-        const text = [assignment.name, assignment.description]
-          .filter(Boolean)
-          .join('\n\n');
-
+      
+        const text = cleanText(
+          [assignment.name, assignment.description].filter(Boolean).join('\n\n')
+        );
         if (text) {
           await saveToPinecone(userId, assignment.id, courseId, text, {
             type: 'assignment',

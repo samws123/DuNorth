@@ -60,7 +60,7 @@ export default async function handler(req, res) {
           `Announcements: ${counts.announcements}`,
           `Synced at: ${new Date().toISOString()}`
         ].join('\n');
-        console.log("summaryText: ", summaryText)
+        
         // try {
         //   await saveToPinecone(userId, courseId, `sync-summary-${courseId}`, summaryText, {
         //     type: 'course_sync',
@@ -96,6 +96,7 @@ export default async function handler(req, res) {
               const docId = pg?.id || pg?.page_id || `${courseId}-page-${Math.random().toString(36).slice(2,8)}`;
               if (text && String(text).trim().length > 0) {
                 try {
+                  
                   await saveToPinecone(userId, courseId, docId, String(text), {
                     type: 'page',
                     course_id: courseId,
@@ -120,6 +121,7 @@ export default async function handler(req, res) {
               const docId = f?.id || f?.file_id || `${courseId}-file-${Math.random().toString(36).slice(2,8)}`;
               if (text && String(text).trim().length > 0) {
                 try {
+                  
                   await saveToPinecone(userId, courseId, docId, String(text), {
                     type: 'file',
                     course_id: courseId,
@@ -144,6 +146,7 @@ export default async function handler(req, res) {
               const docId = ann?.id || `${courseId}-announcement-${Math.random().toString(36).slice(2,8)}`;
               if (text && String(text).trim().length > 0) {
                 try {
+                  
                   await saveToPinecone(userId, courseId, docId, String(text), {
                     type: 'announcement',
                     course_id: courseId,

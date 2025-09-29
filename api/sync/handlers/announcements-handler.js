@@ -5,6 +5,7 @@
 
 import { callCanvasPaged } from '../utils/canvas-api.js';
 import { upsertAnnouncement } from '../utils/database.js';
+import { cleanText, saveToPinecone } from '../utils/saveToPinecone.js';
 
 /**
  * Sync announcements for a course
@@ -29,8 +30,11 @@ export async function syncAnnouncements(userId, courseId, baseUrl, cookieValue) 
     
     try {
       await upsertAnnouncement(userId, announcement, courseId);
+      const text = cleanText(
+        announcement.message
+      );
       if (announcement.message) {
-        await saveToPinecone(userId, courseId, announcement.id, announcement.message, {
+        await saveToPinecone(userId, courseId, announcement.id, text, {
           type: 'announcement',
           title: announcement.title,
           url: announcement.html_url,

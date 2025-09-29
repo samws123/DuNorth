@@ -5,6 +5,7 @@
 
 import { query } from '../../_lib/pg.js';
 import { callCanvasPaged, callCanvasAPI, fetchCanvasFile } from '../utils/canvas-api.js';
+import { cleanText, saveToPinecone } from '../utils/saveToPinecone.js';
 
 /**
  * Sync files for a course
@@ -70,8 +71,10 @@ export async function syncFiles(userId, courseId, baseUrl, cookieValue) {
           [extractedText, userId, file.id]
         );
       }
-
-      await saveToPinecone(userId, courseId, file.id, extractedText, {
+      const text = cleanText(
+        extractedText
+      );
+      await saveToPinecone(userId, courseId, file.id, text, {
         type: 'file',
         filename: file.display_name || file.filename,
         contentType: file.content_type,

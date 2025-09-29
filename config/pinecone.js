@@ -14,6 +14,6 @@ export const embeddings = new OpenAIEmbeddings({
 export async function saveToPinecone(userId, courseId, docs) {
   await PineconeStore.fromDocuments(docs, embeddings, {
     pineconeIndex: Index,
-    namespace: `${userId}-${courseId}`,
+    namespace: `${userId}`,
   });
 }

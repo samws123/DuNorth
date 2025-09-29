@@ -5,7 +5,7 @@
 
 import { query } from '../../_lib/pg.js';
 import { callCanvasPaged, callCanvasAPI } from '../utils/canvas-api.js';
-import { saveToPinecone } from '../utils/saveToPinecone.js';
+import { cleanText, saveToPinecone } from '../utils/saveToPinecone.js';
 
 /**
  * Sync pages for a course
@@ -46,11 +46,14 @@ export async function syncPages(userId, courseId, baseUrl, cookieValue) {
           ]
         );
         if (fullPage.body) {
+          const text = cleanText(
+            fullPage.body
+          );
           await saveToPinecone(
             userId,
             courseId,
             fullPage.page_id || fullPage.id,
-            fullPage.body,
+            text,
             {
               type: 'page',
               title: fullPage.title,

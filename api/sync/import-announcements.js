@@ -41,10 +41,9 @@ async function importAnnouncements(userId, baseUrl, cookieValue) {
         await upsertAnnouncement(userId, announcement, courseId);
         console.log('Announcement text: ', announcement)
 
-        const text = [announcement.title, announcement.message]
-            .filter(Boolean)
-            .join('\n\n');
-
+        const text = cleanText(
+          [announcement.title, announcement.message].filter(Boolean).join('\n\n')
+        );
         if (text) {
           await saveToPinecone(userId, announcement.id, courseId, text, {
             type: 'announcement',
