@@ -7,6 +7,7 @@ import { ensureSchema } from '../_lib/ensureSchema.js';
 import { authenticateSync, resolveUserId } from './utils/auth.js';
 import { callCanvasPaged } from './utils/canvas-api.js';
 import { upsertCourse } from './utils/database.js';
+import { cleanText, saveToPinecone } from './utils/saveToPinecone.js';
 
 /**
  * Main courses import handler with shared utilities
@@ -33,6 +34,23 @@ export default async function handler(req, res) {
     let imported = 0;
     for (const course of courses) {
       await upsertCourse(userId, course);
+
+      console.log("course 0001: ", course)
+
+      const text = cleanText(
+        [course.name, course.course_code, course.term].filter(Boolean).join(" - ")
+      );
+
+      if (text) {
+        await saveToPinecone(userId, course.id, course.id, text, {
+          type: 'course',
+          course_id: course.id,
+          name: course.name,
+          code: course.course_code,
+          term: course.term,
+        });
+      }
+
       imported++;
     }
 
