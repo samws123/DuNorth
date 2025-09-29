@@ -16,6 +16,7 @@
     "html-to-text": "^9.0.5",
     "jsonwebtoken": "^9.0.0",
     "jszip": "^3.10.1",
+    "langchain": "^0.3.34",
     "mammoth": "^1.6.0",
     "mongodb": "^6.6.0",
     "openai": "^4.56.0",

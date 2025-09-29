@@ -1,6 +1,7 @@
 import { query } from '../_lib/pg.js';
 import { ensureSchema } from '../_lib/ensureSchema.js';
 import jwt from 'jsonwebtoken';
+import { saveToPinecone } from './saveToPinecone.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
@@ -107,6 +108,7 @@ export default async function handler(req, res) {
             ]
           );
           if (announcement.message) {
+            
             await saveToPinecone(userId, cid, announcement.id, announcement.message, {
               type: 'announcement',
               announcement_id: announcement.id,
